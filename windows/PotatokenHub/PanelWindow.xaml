@@ -6,7 +6,7 @@
         AllowsTransparency="True"
         Background="Transparent"
         ShowInTaskbar="False"
-        ResizeMode="CanResizeWithGrip"
+        ResizeMode="NoResize"
         SizeToContent="Manual"
         MinWidth="180" MinHeight="90"
         Width="300" Height="250">

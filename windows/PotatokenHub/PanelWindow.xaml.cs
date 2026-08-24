@@ -16,10 +16,23 @@ public partial class PanelWindow : Window
 
     private readonly UsageModel _model;
 
-    private enum SizePreset
+    public enum SizePreset
     {
         Small,
         Large,
+    }
+
+    public SizePreset ActivePreset => _activePreset;
+
+    /// <summary>
+    /// Moves to a preset, doing nothing if the panel is already there — so
+    /// picking the current size from a menu doesn't replay the animation.
+    /// </summary>
+    public void ApplyPreset(SizePreset preset)
+    {
+        if (preset == _activePreset) return;
+        _activePreset = preset;
+        AnimateTo(SizeOf(_activePreset));
     }
 
     /// <summary>
@@ -115,14 +128,8 @@ public partial class PanelWindow : Window
         catch (InvalidOperationException) { }
     }
 
-    public void ToggleSizePreset()
-    {
-        var showing = Math.Abs(Width - SizeOf(_activePreset).Width) < 0.5
-            ? _activePreset
-            : PresetNearest(Width);
-        _activePreset = showing == SizePreset.Large ? SizePreset.Small : SizePreset.Large;
-        AnimateTo(SizeOf(_activePreset));
-    }
+    public void ToggleSizePreset() =>
+        ApplyPreset(_activePreset == SizePreset.Large ? SizePreset.Small : SizePreset.Large);
 
     private bool MovedSince(Point? previous)
     {

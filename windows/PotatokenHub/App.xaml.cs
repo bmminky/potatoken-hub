@@ -87,6 +87,8 @@ public partial class App : Application
 
         menu.Items.Add(new ToolStripSeparator());
 
+        menu.Items.Add(BuildSizeMenu());
+
         var onTop = new ToolStripMenuItem(
             L.T(ko: "항상 위", en: "Always on Top", ja: "常に手前に表示", zh: "总在最前"),
             null,
@@ -120,6 +122,37 @@ public partial class App : Application
             (_, _) => Quit());
 
         menu.Show(System.Windows.Forms.Cursor.Position);
+    }
+
+    /// <summary>
+    /// Size picker. The double-click toggle stays the quick way to switch;
+    /// this is the explicit one, and it shows which preset is active.
+    /// </summary>
+    private ToolStripMenuItem BuildSizeMenu()
+    {
+        var parent = new ToolStripMenuItem(
+            L.T(ko: "창 크기", en: "Window Size", ja: "ウインドウサイズ", zh: "窗口大小"));
+
+        (PanelWindow.SizePreset Preset, string Title)[] options =
+        [
+            (PanelWindow.SizePreset.Small, L.T(ko: "소형", en: "Small", ja: "小", zh: "小")),
+            (PanelWindow.SizePreset.Large, L.T(ko: "대형", en: "Large", ja: "大", zh: "大")),
+        ];
+
+        foreach (var (preset, title) in options)
+        {
+            var item = new ToolStripMenuItem(title, null, (_, _) =>
+            {
+                // Show the panel first, so picking a size from the tray also
+                // brings it back when it's hidden.
+                if (!_panel.IsVisible) _panel.Show();
+                _panel.ApplyPreset(preset);
+            })
+            { Checked = _panel.ActivePreset == preset };
+            parent.DropDownItems.Add(item);
+        }
+
+        return parent;
     }
 
     private ToolStripMenuItem BuildLanguageMenu()
