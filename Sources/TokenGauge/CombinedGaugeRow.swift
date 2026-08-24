@@ -1,16 +1,10 @@
 import SwiftUI
 import TokenGaugeCore
 
-/// Two windows of the same provider shown on one track: the longer window
-/// (Claude's weekly) as the bar, the shorter one (its 5-hour window) drawn
-/// from the same starting edge, but capped at weekly's own extent.
-///
-/// The 5-hour bar isn't an independent 0–100% bar; 100% of it is scaled to
-/// equal 100% of *weekly's current bar*, not 100% of the whole track. At
-/// weekly 77%, a freshly-reset (100%) 5-hour window exactly covers the
-/// orange bar (0–77%) — it can never reach past what weekly allows. As it's
-/// used up, it shrinks from that same starting edge, uncovering orange from
-/// the right.
+/// Two windows of the same provider shown on one track, both measured against
+/// the full track and drawn from the same starting edge. Whichever has more
+/// left goes underneath, so the shorter one always stays visible on top of it
+/// and the longer one shows as a tail past its end.
 struct CombinedGaugeRow: View {
     let base: UsageWindow
     let overlay: UsageWindow
@@ -70,9 +64,9 @@ struct CombinedGaugeRow: View {
     }
 }
 
-/// The track itself: weekly as the base bar, the short window capped at
-/// weekly's own extent and drawn from the same edge. Shared by the large
-/// view's combined row and the small view's compact row, at different
+/// The track itself: both windows measured against the full track and drawn
+/// from the same edge, the one with more remaining underneath. Shared by the
+/// large view's combined row and the small view's compact row, at different
 /// heights, so both places draw the exact same shape.
 struct NestedUsageBar: View {
     let base: UsageWindow
@@ -87,21 +81,22 @@ struct NestedUsageBar: View {
         // body, so a short bar ends up with flattened, angular ends.
         GeometryReader { geo in
             let baseWidth = geo.size.width * fraction(base)
-            // 5-hour's 100% maps to weekly's own bar width, not the full
-            // track — it's a fraction of a fraction.
-            let overlayWidth = baseWidth * fraction(overlay)
+            let overlayWidth = geo.size.width * fraction(overlay)
 
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(Color.gray.opacity(0.2))
 
-                Capsule()
-                    .fill(baseColor)
-                    .frame(width: baseWidth)
-
-                Capsule()
-                    .fill(overlayColor)
-                    .frame(width: overlayWidth)
+                // Longer bar first so the shorter one lands on top of it and
+                // neither can be swallowed: whichever window is tighter is the
+                // one the user needs to see.
+                if fraction(base) >= fraction(overlay) {
+                    Capsule().fill(baseColor).frame(width: baseWidth)
+                    Capsule().fill(overlayColor).frame(width: overlayWidth)
+                } else {
+                    Capsule().fill(overlayColor).frame(width: overlayWidth)
+                    Capsule().fill(baseColor).frame(width: baseWidth)
+                }
             }
         }
         .frame(height: height)

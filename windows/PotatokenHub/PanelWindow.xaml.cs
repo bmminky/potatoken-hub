@@ -278,9 +278,9 @@ public partial class PanelWindow : Window
     }
 
     /// <summary>
-    /// The short window drawn over the long one, capped at the long window's own
-    /// current extent — a 100% 5-hour window fills exactly the weekly bar's
-    /// width, never past it.
+    /// Both windows measured against the full track and drawn from the same
+    /// edge, the one with more remaining underneath — so whichever window is
+    /// tighter always stays visible rather than being covered.
     /// </summary>
     private static UIElement NestedBar(UsageWindow baseWindow, UsageWindow overlay, Color accent, double height = 8)
     {
@@ -309,8 +309,17 @@ public partial class PanelWindow : Window
             HorizontalAlignment = HorizontalAlignment.Left,
         };
 
-        grid.Children.Add(baseBar);
-        grid.Children.Add(overlayBar);
+        // Later children draw on top, so the longer bar goes in first.
+        if (baseFraction >= overlayFraction)
+        {
+            grid.Children.Add(baseBar);
+            grid.Children.Add(overlayBar);
+        }
+        else
+        {
+            grid.Children.Add(overlayBar);
+            grid.Children.Add(baseBar);
+        }
         track.Child = grid;
 
         // Widths are fractions of the measured track, set on layout rather than
@@ -319,7 +328,7 @@ public partial class PanelWindow : Window
         {
             var full = e.NewSize.Width;
             baseBar.Width = full * baseFraction;
-            overlayBar.Width = full * baseFraction * overlayFraction;
+            overlayBar.Width = full * overlayFraction;
         };
 
         return track;
