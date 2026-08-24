@@ -10,7 +10,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: FloatingPanel!
     private var isPanelVisible = false
     private var cancellables: Set<AnyCancellable> = []
-    private var resizeStartSize: CGSize?
     private var sizeAnimation: Timer?
     private var pendingSizeAnimation: (target: CGSize, minSize: NSSize, maxSize: NSSize)?
     private var appearanceObservation: NSKeyValueObservation?
@@ -128,15 +127,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // the window edges to resize gets silently reverted.
         hosting.sizingOptions = []
         panel = FloatingPanel(contentViewController: hosting, size: largeSize)
-        panel.minSize = smallSize
-        panel.maxSize = largeSize
         panel.enforcedSize = size(of: activePreset)
         panel.level = isAlwaysOnTop ? .floating : .normal
         panel.delegate = self
         panel.onDoubleClick = { [weak self] in self?.toggleSizePreset() }
         panel.onRightClick = { [weak self] event in self?.showPanelMenu(for: event) }
         panel.onInteractionStart = { [weak self] in self?.finishSizeAnimation() }
-        addCornerResizeHandles()
 
         // Overriding constrainFrameRect also gave up AppKit's one useful part:
         // hauling a window back when its display disappears. Watch for the
@@ -155,6 +151,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.renderBadge(segments)
             }
             .store(in: &cancellables)
+    }
+
+    /// Moves to a preset, doing nothing if the panel is already there — so a
+    /// pull outwards on an already-large panel doesn't replay the animation.
+    private func applyPreset(_ preset: SizePreset) {
+        guard preset != activePreset else { return }
+        activePreset = preset
+        animatePanel(to: size(of: preset), keepingHorizontalCenter: true, style: .springy)
+    }
+
+    /// Size picker, shared by the panel's and the status item's menus. The
+    /// double-click toggle stays the quick way to switch; this is the explicit
+    /// one, and it also shows which preset is currently active.
+    private func sizeMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(
+            title: L.t(ko: "창 크기", en: "Window Size", ja: "ウインドウサイズ", zh: "窗口大小"),
+            action: nil,
+            keyEquivalent: ""
+        )
+        let submenu = NSMenu()
+        let options: [(SizePreset, String)] = [
+            (.small, L.t(ko: "소형", en: "Small", ja: "小", zh: "小")),
+            (.large, L.t(ko: "대형", en: "Large", ja: "大", zh: "大")),
+        ]
+        for (preset, title) in options {
+            let option = NSMenuItem(title: title, action: #selector(selectSize(_:)), keyEquivalent: "")
+            option.target = self
+            option.representedObject = preset
+            option.state = activePreset == preset ? .on : .off
+            submenu.addItem(option)
+        }
+        item.submenu = submenu
+        return item
+    }
+
+    @objc private func selectSize(_ sender: NSMenuItem) {
+        guard let preset = sender.representedObject as? SizePreset else { return }
+        // Opening the panel first, so picking a size from the status item also
+        // brings it back when it's hidden.
+        if !isPanelVisible {
+            openPanel()
+        }
+        applyPreset(preset)
     }
 
     /// Brings the panel back beside the status item if the display it was on
@@ -177,32 +216,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
-    private func addCornerResizeHandles() {
-        guard let contentView = panel.contentView else { return }
-        let size: CGFloat = 14
-
-        let topLeft = CornerResizeHandle(corner: .topLeft)
-        topLeft.onResizeEnded = { [weak self] startSize in self?.snapToNearestPresetIfNeeded(draggedFrom: startSize) }
-        topLeft.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(topLeft)
-        NSLayoutConstraint.activate([
-            topLeft.topAnchor.constraint(equalTo: contentView.topAnchor),
-            topLeft.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            topLeft.widthAnchor.constraint(equalToConstant: size),
-            topLeft.heightAnchor.constraint(equalToConstant: size),
-        ])
-
-        let topRight = CornerResizeHandle(corner: .topRight)
-        topRight.onResizeEnded = { [weak self] startSize in self?.snapToNearestPresetIfNeeded(draggedFrom: startSize) }
-        topRight.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(topRight)
-        NSLayoutConstraint.activate([
-            topRight.topAnchor.constraint(equalTo: contentView.topAnchor),
-            topRight.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            topRight.widthAnchor.constraint(equalToConstant: size),
-            topRight.heightAnchor.constraint(equalToConstant: size),
-        ])
-    }
 
     private func measuredHeight<V: View>(of view: V, width: CGFloat) -> CGFloat {
         let controller = NSHostingController(rootView: view)
@@ -335,9 +348,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Double-clicking the panel switches to the other preset.
     private func toggleSizePreset() {
-        let target: SizePreset = activePreset == .large ? .small : .large
-        activePreset = target
-        animatePanel(to: size(of: target), keepingHorizontalCenter: true, style: .springy)
+        applyPreset(activePreset == .large ? .small : .large)
     }
 
     enum ResizeStyle {
@@ -492,18 +503,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// never reach small). Looking at which axis this drag moved sidesteps
     /// both: an edge-only drag decides by that edge's axis; a corner drag
     /// (both axes moving together) just picks whichever moved a bit more.
-    private func nearestPreset(to size: CGSize, draggedFrom start: CGSize) -> CGSize {
-        let widthMoved = abs(size.width - start.width)
-        let heightMoved = abs(size.height - start.height)
-
-        if widthMoved >= heightMoved {
-            let widthBoundary = (smallSize.width + largeSize.width) / 2
-            return size.width >= widthBoundary ? largeSize : smallSize
-        } else {
-            let heightBoundary = (smallSize.height + largeSize.height) / 2
-            return size.height >= heightBoundary ? largeSize : smallSize
-        }
-    }
 
     /// The menu on the panel itself, for the actions that are also in its
     /// footer — reachable at the small size, where the footer isn't shown.
@@ -516,6 +515,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         refreshItem.target = self
         menu.addItem(refreshItem)
 
+        menu.addItem(sizeMenuItem())
         menu.addItem(alwaysOnTopMenuItem())
 
         let hideItem = NSMenuItem(title: L.t(ko: "숨기기", en: "Hide", ja: "隠す", zh: "隐藏"), action: #selector(hidePanel), keyEquivalent: "")
@@ -532,6 +532,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         refreshItem.target = self
         menu.addItem(refreshItem)
 
+        menu.addItem(sizeMenuItem())
         menu.addItem(alwaysOnTopMenuItem())
 
         menu.addItem(.separator())
@@ -653,39 +654,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 extension AppDelegate: NSWindowDelegate {
-    /// The authoritative size clamp: `NSWindow.minSize`/`maxSize` alone don't
-    /// reliably hold on a borderless, fullSizeContentView panel, so enforce
-    /// the bounds directly on every live-resize callback.
-    func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
-        // Only police sizes the user is dragging. The springy toggle
-        // deliberately overshoots the presets, and clamping here would flatten
-        // the bounce.
-        guard sender.inLiveResize else { return frameSize }
-        return NSSize(
-            width: min(max(frameSize.width, smallSize.width), largeSize.width),
-            height: min(max(frameSize.height, smallSize.height), largeSize.height)
-        )
-    }
 
-    func windowWillStartLiveResize(_ notification: Notification) {
-        guard let window = notification.object as? NSWindow, window === panel else { return }
-        resizeStartSize = panel.frame.size
-    }
 
-    /// Once the user lets go of the resize handle, snap to whichever of the
-    /// 2 presets (large/small) is closest instead of leaving it at an
-    /// arbitrary dragged size.
-    func windowDidEndLiveResize(_ notification: Notification) {
-        guard let window = notification.object as? NSWindow, window === panel else { return }
-        let start = resizeStartSize ?? panel.frame.size
-        resizeStartSize = nil
-        // AppKit also ends a "live resize" for things the user never dragged —
-        // moving between displays with different backing scales, for one. With
-        // no size delta there's nothing to snap, and running anyway would let
-        // an incidental callback restyle the panel.
-        guard panel.frame.size != start else { return }
-        snapToNearestPresetIfNeeded(draggedFrom: start)
-    }
 
     /// Puts the panel back on its preset if anything resized it while it moved
     /// between displays. Its size is chosen by the user's double-click, not by
@@ -693,9 +663,9 @@ extension AppDelegate: NSWindowDelegate {
     /// able to change it.
     func windowDidChangeScreen(_ notification: Notification) {
         guard let window = notification.object as? NSWindow, window === panel else { return }
-        // Don't fight a drag in progress or the toggle's own animation, both of
-        // which are deliberately mid-flight between presets.
-        guard !panel.inLiveResize, sizeAnimation == nil else { return }
+        // Don't fight the toggle's own animation, which is deliberately
+        // mid-flight between presets.
+        guard sizeAnimation == nil else { return }
 
         let target = size(of: activePreset)
         guard panel.frame.size != target else { return }
@@ -714,23 +684,6 @@ extension AppDelegate: NSWindowDelegate {
         )
     }
 
-    /// Also called manually by the top-corner resize handles, since dragging
-    /// those bypasses AppKit's own resize tracking (and so never fires
-    /// windowWillStartLiveResize/windowDidEndLiveResize on their own).
-    func snapToNearestPresetIfNeeded(draggedFrom start: CGSize) {
-        let current = panel.frame.size
-        let target = nearestPreset(to: current, draggedFrom: start)
-        activePreset = preset(nearestTo: target)
-
-        // A vertical drag never asked the width to change, so growing it off
-        // one side looks like the panel lunging sideways. Keep it centered on
-        // where it already is instead. A horizontal drag keeps its left edge,
-        // which is what dragging a side edge normally does.
-        let widthMoved = abs(current.width - start.width)
-        let heightMoved = abs(current.height - start.height)
-
-        animatePanel(to: target, keepingHorizontalCenter: heightMoved > widthMoved)
-    }
 
     /// The panel has no zoom button, and a double-click anywhere on it is our
     /// own size toggle — don't also let the system's title-bar double-click

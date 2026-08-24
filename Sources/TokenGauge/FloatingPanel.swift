@@ -1,8 +1,9 @@
 import AppKit
 
-/// A chrome-less but user-resizable panel: the title bar is present (so AppKit
-/// installs edge/corner resize handling and drag-to-move) but made fully
-/// transparent and button-less, so it still looks like a plain floating card.
+/// A chrome-less floating card. The title bar is present so AppKit gives the
+/// window its normal shadow and drag-to-move behaviour, but it's made fully
+/// transparent and button-less. The panel is not user-resizable: its size is
+/// one of two presets, chosen by double-clicking it.
 final class FloatingPanel: NSWindow {
     var onDoubleClick: (() -> Void)?
     var onRightClick: ((NSEvent) -> Void)?
@@ -28,7 +29,7 @@ final class FloatingPanel: NSWindow {
     init(contentViewController: NSViewController, size: NSSize) {
         super.init(
             contentRect: NSRect(origin: .zero, size: size),
-            styleMask: [.titled, .fullSizeContentView, .resizable],
+            styleMask: [.titled, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
@@ -80,11 +81,7 @@ final class FloatingPanel: NSWindow {
         var rect = frameRect
         if let enforcedSize,
            rect.size != enforcedSize,
-           !isPerformingOwnResize,
-           // A held mouse button means the user is dragging an edge or a
-           // corner handle, which is a resize we should honor. AppKit's
-           // post-move adjustment runs after the button comes back up.
-           NSEvent.pressedMouseButtons == 0 {
+           !isPerformingOwnResize {
             // Take neither half of the adjustment. Its origin was computed for
             // the size it wanted, so keeping that origin while overriding the
             // size lands the panel off by the difference — which reads as the
@@ -103,7 +100,7 @@ final class FloatingPanel: NSWindow {
 
     /// Observes double-clicks without consuming them: the event is still
     /// forwarded, so background-dragging the window and clicking the SwiftUI
-    /// buttons keep behaving exactly as before.
+    /// buttons keep behaving as they otherwise would.
     override func sendEvent(_ event: NSEvent) {
         if event.type == .leftMouseDown, event.eventNumber != lastHandledMouseDownEventNumber {
             lastHandledMouseDownEventNumber = event.eventNumber
@@ -113,7 +110,6 @@ final class FloatingPanel: NSWindow {
             originAtLastMouseDown = frame.origin
 
             if event.clickCount == 2,
-               !(contentView?.hitTest(event.locationInWindow) is CornerResizeHandle),
                !panelMoved(since: previousOrigin) {
                 onDoubleClick?()
             }
