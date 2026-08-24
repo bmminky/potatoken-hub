@@ -44,15 +44,6 @@ struct FullContent: View {
         .padding(.bottom, 23)
     }
 
-    /// The long and short window of a two-window provider, longest first.
-    /// Picked by span rather than by label so it doesn't depend on the order
-    /// the reader happens to build them in.
-    private func pairedWindows(_ snapshot: ProviderSnapshot) -> (base: UsageWindow, overlay: UsageWindow)? {
-        guard snapshot.windows.count == 2 else { return nil }
-        let sorted = snapshot.windows.sorted { $0.windowMinutes > $1.windowMinutes }
-        return (sorted[0], sorted[1])
-    }
-
     @ViewBuilder
     private func providerSection(snapshot: ProviderSnapshot) -> some View {
         let provider = snapshot.provider
@@ -64,7 +55,7 @@ struct FullContent: View {
                     .foregroundStyle(provider.accentColor)
                 Spacer()
                 if !snapshot.sourceExists {
-                    Text("데이터 없음")
+                    Text(L.t(ko: "데이터 없음", en: "No data", ja: "データなし", zh: "无数据"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -107,10 +98,15 @@ struct MinimalContent: View {
 private struct CompactRow: View {
     let snapshot: ProviderSnapshot
 
-    private var remaining: Double? {
+    /// Claude's weekly when there's a pair, otherwise the provider's one
+    /// window (Codex) — the number shown next to the provider name.
+    private var displayWindow: UsageWindow? {
         guard snapshot.sourceExists else { return nil }
-        return snapshot.windows.compactMap { $0.remainingPercent }.min()
+        if let paired = pairedWindows(snapshot) { return paired.base }
+        return snapshot.windows.first
     }
+
+    private var paired: (base: UsageWindow, overlay: UsageWindow)? { pairedWindows(snapshot) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -121,19 +117,30 @@ private struct CompactRow: View {
                     .font(.caption.bold())
                     .foregroundStyle(snapshot.provider.accentColor)
                 Spacer()
-                if let remaining {
+                if let remaining = displayWindow?.remainingPercent {
                     Text("\(Int(remaining))%")
                         .font(.caption.monospacedDigit())
-                    Text(stateWord(for: remaining))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        // Only the weekly number (Claude) gets the accent;
+                        // Codex's single window keeps the default color, same
+                        // as before this row could show a paired provider.
+                        .foregroundStyle(paired != nil ? snapshot.provider.accentColor : .primary)
                 } else {
                     Text("—")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-            if let remaining {
+            // Same nested bar shape as the large view: weekly as the bar,
+            // 5-hour capped at weekly's own extent and drawn over it.
+            if let paired {
+                NestedUsageBar(
+                    base: paired.base,
+                    overlay: paired.overlay,
+                    baseColor: snapshot.provider.accentColor,
+                    overlayColor: UsagePalette.color(remaining: paired.overlay.remainingPercent, plenty: .white),
+                    height: 5
+                )
+            } else if let remaining = displayWindow?.remainingPercent {
                 MiniUsageBar(remainingPercent: remaining, color: usageBarColor(for: remaining))
             }
         }
@@ -147,23 +154,40 @@ private struct FooterView: View {
     var body: some View {
         HStack(spacing: 10) {
             if let lastUpdated = model.lastUpdated {
-                Text("업데이트 \(lastUpdated, style: .time)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                // Text's Date-with-style interpolation only works with a
+                // literal string passed directly to the initializer, so the
+                // two languages need separate Text calls rather than one
+                // built from a runtime-composed String.
+                Group {
+                    switch L.resolved {
+                    case .korean:
+                        Text("업데이트 \(lastUpdated, style: .time)")
+                    case .japanese:
+                        Text("更新 \(lastUpdated, style: .time)")
+                    case .chinese:
+                        Text("更新于 \(lastUpdated, style: .time)")
+                    case .english, .system:
+                        Text("Updated \(lastUpdated, style: .time)")
+                    }
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
             }
             Spacer(minLength: 4)
-            Button { model.refresh() } label: {
+            Button {
+                model.refresh()
+            } label: {
                 Image(systemName: "arrow.clockwise")
             }
-            .help("새로고침")
+            .help(L.t(ko: "새로고침", en: "Refresh", ja: "更新", zh: "刷新"))
 
             // Hides the panel only; the app keeps running in the menu bar.
             // Quitting is in the status item's right-click menu.
             Button { onHide() } label: {
                 Image(systemName: "eye.slash")
             }
-            .help("숨기기")
+            .help(L.t(ko: "숨기기", en: "Hide", ja: "隠す", zh: "隐藏"))
         }
         .controlSize(.small)
     }
@@ -189,10 +213,16 @@ private struct MiniUsageBar: View {
     }
 }
 
-private func stateWord(for remaining: Double) -> String {
-    UsagePalette.word(remaining: remaining)
-}
-
 private func usageBarColor(for remaining: Double) -> Color {
     UsagePalette.color(remaining: remaining, plenty: .white)
+}
+
+/// The long and short window of a two-window provider, longest first. Picked
+/// by span rather than by label so it doesn't depend on the order the reader
+/// happens to build them in. Shared by the large view's provider section and
+/// the small view's compact row, so both draw the same bar shape.
+private func pairedWindows(_ snapshot: ProviderSnapshot) -> (base: UsageWindow, overlay: UsageWindow)? {
+    guard snapshot.windows.count == 2 else { return nil }
+    let sorted = snapshot.windows.sorted { $0.windowMinutes > $1.windowMinutes }
+    return (sorted[0], sorted[1])
 }

@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import Combine
 import QuartzCore
+import TokenGaugeCore
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -23,6 +24,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private static let savedFrameKey = "TokenGauge.panelFrame"
     private static let hasShownBeforeKey = "TokenGauge.hasShownBefore"
+    private static let alwaysOnTopKey = "TokenGauge.alwaysOnTop"
+
+    /// When off, the panel still jumps to the front the moment it's opened
+    /// (popIn already orders it front), but afterwards behaves like a normal
+    /// window: clicking another app's window can cover it. When on, it stays
+    /// above everything regardless of what's focused.
+    private var isAlwaysOnTop: Bool {
+        get {
+            // Default true: matches the panel's behavior before this setting
+            // existed, so upgrading doesn't change anyone's experience.
+            UserDefaults.standard.object(forKey: Self.alwaysOnTopKey) as? Bool ?? true
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Self.alwaysOnTopKey)
+            panel.level = newValue ? .floating : .normal
+        }
+    }
 
     let model = UsageModel()
 
@@ -81,6 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel = FloatingPanel(contentViewController: hosting, size: largeSize)
         panel.minSize = smallSize
         panel.maxSize = largeSize
+        panel.level = isAlwaysOnTop ? .floating : .normal
         panel.delegate = self
         panel.onDoubleClick = { [weak self] in self?.toggleSizePreset() }
         panel.onRightClick = { [weak self] event in self?.showPanelMenu(for: event) }
@@ -427,11 +446,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let menu = NSMenu()
 
-        let refreshItem = NSMenuItem(title: "새로고침", action: #selector(refreshNow), keyEquivalent: "")
+        let refreshItem = NSMenuItem(title: L.t(ko: "새로고침", en: "Refresh", ja: "更新", zh: "刷新"), action: #selector(refreshFromPanelMenu), keyEquivalent: "")
         refreshItem.target = self
         menu.addItem(refreshItem)
 
-        let hideItem = NSMenuItem(title: "숨기기", action: #selector(hidePanel), keyEquivalent: "")
+        menu.addItem(alwaysOnTopMenuItem())
+
+        let hideItem = NSMenuItem(title: L.t(ko: "숨기기", en: "Hide", ja: "隠す", zh: "隐藏"), action: #selector(hidePanel), keyEquivalent: "")
         hideItem.target = self
         menu.addItem(hideItem)
 
@@ -441,24 +462,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showContextMenu() {
         let menu = NSMenu()
 
-        let refreshItem = NSMenuItem(title: "새로고침", action: #selector(refreshNow), keyEquivalent: "")
+        let refreshItem = NSMenuItem(title: L.t(ko: "새로고침", en: "Refresh", ja: "更新", zh: "刷新"), action: #selector(refreshFromTrayMenu), keyEquivalent: "")
         refreshItem.target = self
         menu.addItem(refreshItem)
 
+        menu.addItem(alwaysOnTopMenuItem())
+
         menu.addItem(.separator())
 
-        let loginItem = NSMenuItem(title: "로그인 시 자동 실행", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+        let loginItem = NSMenuItem(
+            title: L.t(ko: "로그인 시 자동 실행", en: "Launch at Login", ja: "ログイン時に自動起動", zh: "登录时启动"),
+            action: #selector(toggleLaunchAtLogin),
+            keyEquivalent: ""
+        )
         loginItem.target = self
         loginItem.state = LaunchAtLogin.isEnabled ? .on : .off
         menu.addItem(loginItem)
 
+        menu.addItem(languageMenuItem())
+
         menu.addItem(.separator())
 
-        let aboutItem = NSMenuItem(title: "\(AboutPanel.appName) 정보", action: #selector(showAbout), keyEquivalent: "")
+        let aboutItem = NSMenuItem(
+            title: L.t(
+                ko: "\(AboutPanel.appName) 정보",
+                en: "About \(AboutPanel.appName)",
+                ja: "\(AboutPanel.appName) について",
+                zh: "关于\(AboutPanel.appName)"
+            ),
+            action: #selector(showAbout),
+            keyEquivalent: ""
+        )
         aboutItem.target = self
         menu.addItem(aboutItem)
 
-        let quitItem = NSMenuItem(title: "앱 종료하기", action: #selector(quitApp), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: L.t(ko: "앱 종료하기", en: "Quit", ja: "終了", zh: "退出"), action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 
@@ -467,11 +505,68 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = nil
     }
 
+    /// Titled in both languages at once ("언어 / Language") rather than just
+    /// the current one — this is the one control that changes what language
+    /// everything else is in, so it needs to stay findable even if someone
+    /// ends up in a language they don't read.
+    private func languageMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "언어 / Language / 言語 / 语言", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+
+        let options: [(L.Language, String)] = [
+            (.system, L.t(ko: "시스템 언어 따름", en: "Follow System", ja: "システム言語に従う", zh: "跟随系统语言")),
+            (.korean, "한국어"),
+            (.english, "English"),
+            (.japanese, "日本語"),
+            (.chinese, "中文"),
+        ]
+        for (language, title) in options {
+            let option = NSMenuItem(title: title, action: #selector(selectLanguage(_:)), keyEquivalent: "")
+            option.target = self
+            option.representedObject = language
+            option.state = L.languagePreference == language ? .on : .off
+            submenu.addItem(option)
+        }
+
+        item.submenu = submenu
+        return item
+    }
+
+    @objc private func selectLanguage(_ sender: NSMenuItem) {
+        guard let language = sender.representedObject as? L.Language else { return }
+        L.languagePreference = language
+        // Menus are rebuilt fresh each time they're opened, so they'll pick
+        // this up on their own; the already-open panel needs to be told,
+        // since its text only changes when something re-renders it.
+        model.refresh()
+    }
+
+    /// Shared by both menus (the panel's own and the status item's) so the
+    /// checkbox always reflects the same one underlying setting.
+    private func alwaysOnTopMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(
+            title: L.t(ko: "항상 위", en: "Always on Top", ja: "常に最前面", zh: "始终置顶"),
+            action: #selector(toggleAlwaysOnTop),
+            keyEquivalent: ""
+        )
+        item.target = self
+        item.state = isAlwaysOnTop ? .on : .off
+        return item
+    }
+
+    @objc private func toggleAlwaysOnTop() {
+        isAlwaysOnTop.toggle()
+    }
+
     @objc private func showAbout() {
         AboutPanel.show()
     }
 
-    @objc private func refreshNow() {
+    @objc private func refreshFromPanelMenu() {
+        model.refresh()
+    }
+
+    @objc private func refreshFromTrayMenu() {
         model.refresh()
     }
 

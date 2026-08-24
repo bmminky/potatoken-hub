@@ -93,10 +93,10 @@ public enum CodexUsageReader {
     private static func labelFor(minutes: Int) -> String {
         // A 7-day window is the weekly allowance, and reads better named that
         // way — and matches how Claude's own weekly window is labelled.
-        if minutes == 7 * 24 * 60 { return "주간" }
-        if minutes < 60 { return "\(minutes)분" }
-        if minutes % 1440 == 0 { return "\(minutes / 1440)일" }
-        if minutes % 60 == 0 { return "\(minutes / 60)시간" }
-        return "\(minutes)분"
+        if minutes == 7 * 24 * 60 { return L.t(ko: "주간", en: "Weekly", ja: "週間", zh: "每周") }
+        if minutes < 60 { return L.t(ko: "\(minutes)분", en: "\(minutes)m", ja: "\(minutes)分", zh: "\(minutes)分钟") }
+        if minutes % 1440 == 0 { return L.t(ko: "\(minutes / 1440)일", en: "\(minutes / 1440)d", ja: "\(minutes / 1440)日", zh: "\(minutes / 1440)天") }
+        if minutes % 60 == 0 { return L.t(ko: "\(minutes / 60)시간", en: "\(minutes / 60)h", ja: "\(minutes / 60)時間", zh: "\(minutes / 60)小时") }
+        return L.t(ko: "\(minutes)분", en: "\(minutes)m", ja: "\(minutes)分", zh: "\(minutes)分钟")
     }
 }

@@ -21,15 +21,6 @@ enum UsagePalette {
         }
     }
 
-    static func word(remaining: Double?) -> String {
-        switch level(remaining: remaining) {
-        case .plenty: return "여유"
-        case .caution: return "주의"
-        case .low: return "부족"
-        case .unknown: return "—"
-        }
-    }
-
     // Caution and low are fixed values so they read identically everywhere.
     // Plenty is not: on the panel it's white against dark material, but in the
     // menu bar it has to follow the menu bar, so each caller supplies its own.

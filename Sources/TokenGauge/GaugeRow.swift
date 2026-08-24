@@ -59,18 +59,41 @@ extension UsageWindow {
     }
 }
 
-/// When a window resets, phrased relative to now. Estimated times are marked
-/// with 약, since Claude's local history has no reset timestamp to read.
+/// When a window resets, phrased relative to now. Estimated times carry an
+/// "approximately" qualifier, since Claude's local history has no reset
+/// timestamp to read.
 enum ResetText {
     static func of(_ window: UsageWindow) -> String? {
         guard let date = window.resetDate else { return nil }
         let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
+        // Matches the display language rather than the system's exact
+        // region, so a Portuguese system showing our English text also gets
+        // an English relative phrase, not a Portuguese one mixed into it.
+        formatter.locale = L.formattingLocale
         formatter.unitsStyle = .short
         let relative = formatter.localizedString(for: date, relativeTo: Date())
-        // 약 qualifies the duration, not the reset itself, so it belongs next
-        // to the time: "리셋 약 1시간 후", not "약 리셋 1시간 후".
-        let approximately = window.resetKind == .estimated ? "약 " : ""
-        return "리셋 \(approximately)\(relative)"
+        let isEstimated = window.resetKind == .estimated
+
+        switch L.resolved {
+        case .korean:
+            // 약 qualifies the duration, not the reset itself, so it belongs
+            // next to the time: "리셋 약 1시간 후", not "약 리셋 1시간 후".
+            return "리셋 \(isEstimated ? "약 " : "")\(relative)"
+        case .japanese:
+            // Same reasoning as Korean: 約 sits with the duration, and the
+            // formatter's Japanese output already ends in 後 ("6日後"), so it
+            // reads naturally as "約6日後".
+            return "リセット \(isEstimated ? "約" : "")\(relative)"
+        case .chinese:
+            // Chinese "about" (大约) also reads naturally right before the
+            // quantity: "大约6天后".
+            return "重置 \(isEstimated ? "大约" : "")\(relative)"
+        case .english, .system:
+            // RelativeDateTimeFormatter's English output already starts with
+            // "in"/"ago" ("in 6 days"), so "about" can't be inserted before it
+            // without reading like "about in 6 days". A trailing qualifier
+            // avoids that.
+            return "Resets \(relative)\(isEstimated ? " (est.)" : "")"
+        }
     }
 }

@@ -50,7 +50,7 @@ public enum ClaudeUsageReader {
         let windows = [
             UsageWindow(
                 provider: .claude,
-                label: "5시간",
+                label: L.t(ko: "5시간", en: "5h", ja: "5時間", zh: "5小时"),
                 windowMinutes: 5 * 60,
                 usedPercent: latest.u["fh"].map(Double.init),
                 resetDate: fhReset,
@@ -58,7 +58,7 @@ public enum ClaudeUsageReader {
             ),
             UsageWindow(
                 provider: .claude,
-                label: "주간",
+                label: L.t(ko: "주간", en: "Weekly", ja: "週間", zh: "每周"),
                 windowMinutes: 7 * 24 * 60,
                 usedPercent: latest.u["sd"].map(Double.init),
                 resetDate: sdReset,

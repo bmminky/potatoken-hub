@@ -5,6 +5,16 @@ Claude와 Codex의 남은 사용량을 macOS 메뉴바에서 보여주는 로컬
 Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계정, 분석 도구, 제공자 API 키가 없고
 네트워크 통신도 하지 않습니다.
 
+A local-only macOS menu bar app that shows your remaining Claude and Codex
+usage. It only reads usage records already stored on your Mac — no accounts,
+no analytics, no provider API keys, no network calls.
+
+## 스크린샷
+
+| 메뉴바 | 소형 창 | 대형 창 |
+|---|---|---|
+| ![menu bar](Resources/Screenshots/menu-bar.jpg) | ![small panel](Resources/Screenshots/small-panel.jpg) | ![large panel](Resources/Screenshots/large-panel.jpg) |
+
 ## 기능
 
 - **메뉴바 표시** — 각 제공자의 가장 빠듯한 남은 비율을 `Cl 74%  Cx 55%` 형태로 표시
@@ -15,6 +25,7 @@ Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계�
 - **로컬 알림** — 사용량이 0%가 되는 순간과 리셋되는 순간 각각 1회씩
 - **우클릭 메뉴** — 로그인 시 자동 실행 토글, 앱 종료
 - **위치·크기 기억** — 창을 닫은 자리에 그대로 다시 열림
+- **4개 언어** — 한국어·English·日本語·中文, 시스템 언어 자동 감지 또는 트레이 메뉴에서 수동 전환
 - Dock 아이콘 없음 (`LSUIElement`)
 
 ## 데이터 출처

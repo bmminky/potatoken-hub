@@ -30,14 +30,34 @@ public final class AlertManager: @unchecked Sendable {
             guard !alreadyAlerted else { return }
             lock.lock(); exhaustionAlerted.insert(window.id); lock.unlock()
             notify(
-                title: "\(window.provider.rawValue) \(window.label) 소진",
-                body: "사용 가능한 한도가 0%입니다."
+                title: L.t(
+                    ko: "\(window.provider.rawValue) \(window.label) 소진",
+                    en: "\(window.provider.rawValue) \(window.label) exhausted",
+                    ja: "\(window.provider.rawValue) \(window.label) 使い切り",
+                    zh: "\(window.provider.rawValue) \(window.label) 已用完"
+                ),
+                body: L.t(
+                    ko: "사용 가능한 한도가 0%입니다.",
+                    en: "You're out of quota for this window.",
+                    ja: "この期間の利用可能な割り当てが0%になりました。",
+                    zh: "该时间段的可用配额已为0%。"
+                )
             )
         } else {
             if let previous, previous <= 0.01 {
                 notify(
-                    title: "\(window.provider.rawValue) \(window.label) 리셋",
-                    body: "한도가 초기화되었습니다. 남은 한도 \(Int(remaining))%."
+                    title: L.t(
+                        ko: "\(window.provider.rawValue) \(window.label) 리셋",
+                        en: "\(window.provider.rawValue) \(window.label) reset",
+                        ja: "\(window.provider.rawValue) \(window.label) リセット",
+                        zh: "\(window.provider.rawValue) \(window.label) 已重置"
+                    ),
+                    body: L.t(
+                        ko: "한도가 초기화되었습니다. 남은 한도 \(Int(remaining))%.",
+                        en: "Your quota has reset. \(Int(remaining))% remaining.",
+                        ja: "割り当てがリセットされました。残り\(Int(remaining))%。",
+                        zh: "配额已重置。剩余\(Int(remaining))%。"
+                    )
                 )
             }
             lock.lock(); exhaustionAlerted.remove(window.id); lock.unlock()

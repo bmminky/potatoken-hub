@@ -1,11 +1,11 @@
 import AppKit
+import TokenGaugeCore
 
 /// The standard macOS about panel, filled in from the bundle so the name and
 /// version never drift from Info.plist.
 enum AboutPanel {
     private static let creator = "bmminky"
     private static let repository = "https://github.com/bmminky/TokenGauge"
-    private static let email = "s12m1004@gmail.com"
 
     static var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "potatoken hub"
@@ -26,12 +26,15 @@ enum AboutPanel {
         let result = NSMutableAttributedString()
 
         result.append(NSAttributedString(
-            string: "만든 사람  \(creator)\n",
+            string: L.t(
+                ko: "만든 사람  \(creator)\n",
+                en: "Created by \(creator)\n",
+                ja: "作成者 \(creator)\n",
+                zh: "作者 \(creator)\n"
+            ),
             attributes: [.font: body, .foregroundColor: NSColor.labelColor]
         ))
         result.append(link("GitHub", url: repository, font: body))
-        result.append(NSAttributedString(string: "\n", attributes: [.font: body]))
-        result.append(link(email, url: "mailto:\(email)", font: body))
 
         let centered = NSMutableParagraphStyle()
         centered.alignment = .center
