@@ -83,6 +83,7 @@ public enum CodexUsageReader {
         return UsageWindow(
             provider: .codex,
             label: label,
+            windowMinutes: window.window_minutes,
             usedPercent: window.used_percent,
             resetDate: resetDate,
             resetKind: resetDate != nil ? .exact : .unknown
@@ -90,6 +91,9 @@ public enum CodexUsageReader {
     }
 
     private static func labelFor(minutes: Int) -> String {
+        // A 7-day window is the weekly allowance, and reads better named that
+        // way — and matches how Claude's own weekly window is labelled.
+        if minutes == 7 * 24 * 60 { return "주간" }
         if minutes < 60 { return "\(minutes)분" }
         if minutes % 1440 == 0 { return "\(minutes / 1440)일" }
         if minutes % 60 == 0 { return "\(minutes / 60)시간" }

@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables: Set<AnyCancellable> = []
     private var resizeStartSize: CGSize?
     private var sizeAnimation: Timer?
+    private var appearanceObservation: NSKeyValueObservation?
 
     /// The 2 snap presets. Heights are measured from the real SwiftUI content
     /// at launch (see applicationDidFinishLaunching) instead of guessed, so
@@ -27,11 +28,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = StatusItemBadge.image(for: model.menuBarSegments)
             button.target = self
             button.action = #selector(statusItemClicked(_:))
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+
+            // The badge bakes its colors in, so it has to be redrawn whenever
+            // the menu bar switches between light and dark.
+            appearanceObservation = button.observe(\.effectiveAppearance) { [weak self] _, _ in
+                MainActor.assumeIsolated { self?.renderBadge() }
+            }
         }
+        renderBadge()
 
         // Measured with the exact same .regularMaterial/clipShape wrapper the
         // real window uses. Now that the hosted view ignores the title bar's
@@ -75,14 +82,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.maxSize = largeSize
         panel.delegate = self
         panel.onDoubleClick = { [weak self] in self?.toggleSizePreset() }
+        panel.onRightClick = { [weak self] event in self?.showPanelMenu(for: event) }
         addCornerResizeHandles()
 
         model.$menuBarSegments
             .receive(on: RunLoop.main)
             .sink { [weak self] segments in
-                self?.statusItem.button?.image = StatusItemBadge.image(for: segments)
+                self?.renderBadge(segments)
             }
             .store(in: &cancellables)
+    }
+
+    private func renderBadge(_ segments: [StatusItemBadge.Segment]? = nil) {
+        guard let button = statusItem.button else { return }
+        let isDark = button.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        button.image = StatusItemBadge.image(
+            for: segments ?? model.menuBarSegments,
+            isDarkMenuBar: isDark
+        )
     }
 
     private func addCornerResizeHandles() {
@@ -369,6 +386,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// The menu on the panel itself, for the actions that are also in its
+    /// footer — reachable at the small size, where the footer isn't shown.
+    private func showPanelMenu(for event: NSEvent) {
+        guard let contentView = panel.contentView else { return }
+
+        let menu = NSMenu()
+
+        let refreshItem = NSMenuItem(title: "새로고침", action: #selector(refreshNow), keyEquivalent: "")
+        refreshItem.target = self
+        menu.addItem(refreshItem)
+
+        let hideItem = NSMenuItem(title: "숨기기", action: #selector(hidePanel), keyEquivalent: "")
+        hideItem.target = self
+        menu.addItem(hideItem)
+
+        NSMenu.popUpContextMenu(menu, with: event, for: contentView)
+    }
+
     private func showContextMenu() {
         let menu = NSMenu()
 
@@ -385,6 +420,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(.separator())
 
+        let aboutItem = NSMenuItem(title: "\(AboutPanel.appName) 정보", action: #selector(showAbout), keyEquivalent: "")
+        aboutItem.target = self
+        menu.addItem(aboutItem)
+
         let quitItem = NSMenuItem(title: "앱 종료하기", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
@@ -394,8 +433,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = nil
     }
 
+    @objc private func showAbout() {
+        AboutPanel.show()
+    }
+
     @objc private func refreshNow() {
         model.refresh()
+    }
+
+    @objc private func hidePanel() {
+        closePanel()
     }
 
     @objc private func toggleLaunchAtLogin() {

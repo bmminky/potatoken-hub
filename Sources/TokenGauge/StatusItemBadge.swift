@@ -1,20 +1,27 @@
 import AppKit
+import TokenGaugeCore
 
 /// Renders the menu bar readout.
 ///
-/// Drawn as an image rather than set as the button's title because the
-/// provider labels are bold while their percentages are not, which a plain
-/// title can't express. It's a template image, so the system tints it to match
-/// the menu bar: white on a dark menu bar, black on a light one.
+/// Drawn as an image rather than set as the button's title because it mixes
+/// weights and colors that a plain title can't express.
+///
+/// This is *not* a template image: templates get flattened to one system tint,
+/// which would throw away the provider accent and the usage colors. The cost
+/// is that light/dark adaptation has to be done by hand, which is why the
+/// caller passes `isDarkMenuBar` and re-renders when the appearance changes.
 enum StatusItemBadge {
-    /// One provider's readout: a short label and its remaining percentage.
+    /// One provider's readout. Carries the provider and the raw remaining
+    /// percentage, not colors, so the styling lives here in one place.
     struct Segment: Equatable {
         let label: String
         let value: String
+        let provider: Provider?
+        let remaining: Double?
     }
 
-    static func image(for segments: [Segment]) -> NSImage {
-        let (text, separatorCenters) = layout(segments)
+    static func image(for segments: [Segment], isDarkMenuBar: Bool) -> NSImage {
+        let (text, separatorCenters) = layout(segments, isDarkMenuBar: isDarkMenuBar)
         let textSize = text.size()
         let width = ceil(textSize.width)
         let height = ceil(textSize.height)
@@ -41,29 +48,34 @@ enum StatusItemBadge {
                 path.move(to: NSPoint(x: pixelAligned, y: bottom))
                 path.line(to: NSPoint(x: pixelAligned, y: bottom + span))
             }
-            NSColor.black.setStroke()
+            neutralColor(isDarkMenuBar).withAlphaComponent(0.5).setStroke()
             path.stroke()
             return true
         }
-        image.isTemplate = true
         return image
+    }
+
+    /// The plain foreground, matching what an untinted menu bar item would use.
+    private static func neutralColor(_ isDarkMenuBar: Bool) -> NSColor {
+        isDarkMenuBar ? .white : .black
+    }
+
+    /// Shares the panel's palette so the same percentage reads the same color
+    /// in both places. "Plenty" follows the menu bar rather than being white
+    /// outright, since white would vanish on a light menu bar.
+    private static func usageColor(remaining: Double?, isDarkMenuBar: Bool) -> NSColor {
+        UsagePalette.nsColor(remaining: remaining, plenty: neutralColor(isDarkMenuBar))
     }
 
     /// Builds the readout and, alongside it, the x position of each gap left
     /// for a separator.
-    private static func layout(_ segments: [Segment]) -> (NSAttributedString, [CGFloat]) {
+    private static func layout(_ segments: [Segment], isDarkMenuBar: Bool) -> (NSAttributedString, [CGFloat]) {
         // Match the size the menu bar uses for everything else, but with
         // monospaced digits so the readout doesn't twitch wider and narrower
         // as the percentages tick over.
         let size = NSFont.menuBarFont(ofSize: 0).pointSize
-        let labelAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.monospacedDigitSystemFont(ofSize: size, weight: .bold),
-            .foregroundColor: NSColor.black,
-        ]
-        let valueAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.monospacedDigitSystemFont(ofSize: size, weight: .regular),
-            .foregroundColor: NSColor.black,
-        ]
+        let boldFont = NSFont.monospacedDigitSystemFont(ofSize: size, weight: .bold)
+        let regularFont = NSFont.monospacedDigitSystemFont(ofSize: size, weight: .regular)
 
         let result = NSMutableAttributedString()
         var separatorCenters: [CGFloat] = []
@@ -71,11 +83,28 @@ enum StatusItemBadge {
         for segment in segments {
             if result.length > 0 {
                 let start = result.size().width
-                result.append(NSAttributedString(string: "   ", attributes: valueAttributes))
+                result.append(NSAttributedString(
+                    string: "   ",
+                    attributes: [.font: regularFont, .foregroundColor: neutralColor(isDarkMenuBar)]
+                ))
                 separatorCenters.append((start + result.size().width) / 2)
             }
-            result.append(NSAttributedString(string: segment.label, attributes: labelAttributes))
-            result.append(NSAttributedString(string: " " + segment.value, attributes: valueAttributes))
+
+            // Both labels carry their provider accent, matching the panel's
+            // section headings.
+            let labelColor = segment.provider?.accentNSColor(isDark: isDarkMenuBar)
+                ?? neutralColor(isDarkMenuBar)
+            result.append(NSAttributedString(
+                string: segment.label,
+                attributes: [.font: boldFont, .foregroundColor: labelColor]
+            ))
+            result.append(NSAttributedString(
+                string: " " + segment.value,
+                attributes: [
+                    .font: regularFont,
+                    .foregroundColor: usageColor(remaining: segment.remaining, isDarkMenuBar: isDarkMenuBar),
+                ]
+            ))
         }
         return (result, separatorCenters)
     }

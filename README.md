@@ -1,4 +1,4 @@
-# TokenGauge
+# potatoken hub
 
 Claude와 Codex의 남은 사용량을 macOS 메뉴바에서 보여주는 로컬 전용 앱.
 
@@ -36,8 +36,8 @@ Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계�
 
 ```bash
 ./Scripts/build-app.sh
-ditto .build/TokenGauge.app /Applications/TokenGauge.app
-open /Applications/TokenGauge.app
+ditto ".build/potatoken hub.app" "/Applications/potatoken hub.app"
+open "/Applications/potatoken hub.app"
 ```
 
 빌드 스크립트가 릴리스 바이너리 컴파일, 앱 번들 생성, 애드혹 서명, 검증까지 수행합니다.

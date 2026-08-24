@@ -1,16 +1,31 @@
 import SwiftUI
+import AppKit
 import TokenGaugeCore
 
 extension Provider {
-    /// Brand-ish accent for the section heading. Claude gets its orange;
-    /// Codex gets a neutral gray.
-    var accentColor: Color {
+    /// Brand-ish accent, defined once so the panel and the menu bar can't
+    /// drift apart.
+    ///
+    /// Claude's orange sits mid-tone and reads against either background, so
+    /// it's fixed. Codex's neutral gray can't be: one gray is either too dim
+    /// on a dark background or too faint on a light one, so it flips.
+    func accentNSColor(isDark: Bool) -> NSColor {
         switch self {
         case .claude:
-            return Color(red: 0.85, green: 0.47, blue: 0.34) // ~#D97757
+            return NSColor(srgbRed: 0.85, green: 0.47, blue: 0.34, alpha: 1) // ~#D97757
         case .codex:
-            return Color(red: 0.58, green: 0.58, blue: 0.60) // ~#949499
+            return isDark
+                ? NSColor(srgbRed: 0.74, green: 0.74, blue: 0.77, alpha: 1)  // ~#BDBDC4
+                : NSColor(srgbRed: 0.45, green: 0.45, blue: 0.48, alpha: 1)  // ~#73737A
         }
+    }
+
+    /// Resolves against whatever appearance it's drawn in, so the panel
+    /// follows light/dark on its own.
+    var accentColor: Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            accentNSColor(isDark: appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua)
+        })
     }
 }
 

@@ -5,12 +5,7 @@ struct GaugeRow: View {
     let window: UsageWindow
 
     private var color: Color {
-        guard let r = window.remainingPercent else { return .gray }
-        switch r {
-        case 50...: return .white
-        case 15..<50: return .yellow
-        default: return .red
-        }
+        UsagePalette.color(remaining: window.remainingPercent, plenty: .white)
     }
 
     var body: some View {
@@ -19,11 +14,9 @@ struct GaugeRow: View {
                 Text(window.label)
                     .font(.subheadline)
                 Spacer()
-                Text(window.stateWord)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                 Text(remainingText)
                     .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(color)
                     .frame(minWidth: 40, alignment: .trailing)
             }
             ZStack(alignment: .leading) {
@@ -48,13 +41,19 @@ struct GaugeRow: View {
         return "\(Int(r))%"
     }
 
-    private var resetText: String? {
+    private var resetText: String? { ResetText.of(window) }
+}
+
+/// When a window resets, phrased relative to now. Estimated times are marked
+/// with 약, since Claude's local history has no reset timestamp to read.
+enum ResetText {
+    static func of(_ window: UsageWindow) -> String? {
         guard let date = window.resetDate else { return nil }
         let formatter = RelativeDateTimeFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
         formatter.unitsStyle = .short
-        let rel = formatter.localizedString(for: date, relativeTo: Date())
+        let relative = formatter.localizedString(for: date, relativeTo: Date())
         let prefix = window.resetKind == .estimated ? "약 " : ""
-        return "\(prefix)리셋 \(rel)"
+        return "\(prefix)리셋 \(relative)"
     }
 }

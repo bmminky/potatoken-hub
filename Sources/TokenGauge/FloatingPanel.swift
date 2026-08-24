@@ -5,6 +5,7 @@ import AppKit
 /// transparent and button-less, so it still looks like a plain floating card.
 final class FloatingPanel: NSWindow {
     var onDoubleClick: (() -> Void)?
+    var onRightClick: ((NSEvent) -> Void)?
 
     init(contentViewController: NSViewController, size: NSSize) {
         super.init(
@@ -41,6 +42,15 @@ final class FloatingPanel: NSWindow {
            !(contentView?.hitTest(event.locationInWindow) is CornerResizeHandle) {
             onDoubleClick?()
         }
+
+        // Right-clicks are consumed rather than forwarded: the menu is the
+        // whole intent, and letting the event through as well would leave the
+        // hosted SwiftUI view tracking a press the user never finishes.
+        if event.type == .rightMouseDown {
+            onRightClick?(event)
+            return
+        }
+
         super.sendEvent(event)
     }
 }

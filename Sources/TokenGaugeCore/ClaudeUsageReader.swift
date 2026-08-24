@@ -51,6 +51,7 @@ public enum ClaudeUsageReader {
             UsageWindow(
                 provider: .claude,
                 label: "5시간",
+                windowMinutes: 5 * 60,
                 usedPercent: latest.u["fh"].map(Double.init),
                 resetDate: fhReset,
                 resetKind: fhReset != nil ? .estimated : .unknown
@@ -58,6 +59,7 @@ public enum ClaudeUsageReader {
             UsageWindow(
                 provider: .claude,
                 label: "주간",
+                windowMinutes: 7 * 24 * 60,
                 usedPercent: latest.u["sd"].map(Double.init),
                 resetDate: sdReset,
                 resetKind: sdReset != nil ? .estimated : .unknown

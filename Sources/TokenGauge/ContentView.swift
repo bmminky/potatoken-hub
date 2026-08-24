@@ -44,6 +44,15 @@ struct FullContent: View {
         .padding(.bottom, 23)
     }
 
+    /// The long and short window of a two-window provider, longest first.
+    /// Picked by span rather than by label so it doesn't depend on the order
+    /// the reader happens to build them in.
+    private func pairedWindows(_ snapshot: ProviderSnapshot) -> (base: UsageWindow, overlay: UsageWindow)? {
+        guard snapshot.windows.count == 2 else { return nil }
+        let sorted = snapshot.windows.sorted { $0.windowMinutes > $1.windowMinutes }
+        return (sorted[0], sorted[1])
+    }
+
     @ViewBuilder
     private func providerSection(snapshot: ProviderSnapshot) -> some View {
         let provider = snapshot.provider
@@ -60,7 +69,12 @@ struct FullContent: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            if snapshot.windows.isEmpty {
+            // Exactly two windows collapse onto one track — the long window as
+            // the bar, the short one laid over it — so a provider takes a
+            // single row however many windows it reports.
+            if let (base, overlay) = pairedWindows(snapshot) {
+                CombinedGaugeRow(base: base, overlay: overlay, baseColor: provider.accentColor)
+            } else if snapshot.windows.isEmpty {
                 Text("—")
                     .foregroundStyle(.secondary)
                     .font(.caption)
@@ -173,17 +187,9 @@ private struct MiniUsageBar: View {
 }
 
 private func stateWord(for remaining: Double) -> String {
-    switch remaining {
-    case 50...: return "여유"
-    case 15..<50: return "주의"
-    default: return "부족"
-    }
+    UsagePalette.word(remaining: remaining)
 }
 
 private func usageBarColor(for remaining: Double) -> Color {
-    switch remaining {
-    case 50...: return .white
-    case 15..<50: return .yellow
-    default: return .red
-    }
+    UsagePalette.color(remaining: remaining, plenty: .white)
 }

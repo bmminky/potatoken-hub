@@ -20,13 +20,17 @@ public struct UsageWindow: Identifiable, Sendable, Equatable {
     public var id: String { "\(provider.rawValue)-\(label)" }
     public let provider: Provider
     public let label: String
+    /// How long this window spans. Lets callers tell a short window from a
+    /// long one without matching on the display label.
+    public let windowMinutes: Int
     public let usedPercent: Double?
     public let resetDate: Date?
     public let resetKind: ResetKind
 
-    public init(provider: Provider, label: String, usedPercent: Double?, resetDate: Date?, resetKind: ResetKind) {
+    public init(provider: Provider, label: String, windowMinutes: Int, usedPercent: Double?, resetDate: Date?, resetKind: ResetKind) {
         self.provider = provider
         self.label = label
+        self.windowMinutes = windowMinutes
         self.usedPercent = usedPercent
         self.resetDate = resetDate
         self.resetKind = resetKind
@@ -35,15 +39,6 @@ public struct UsageWindow: Identifiable, Sendable, Equatable {
     public var remainingPercent: Double? {
         guard let usedPercent, usedPercent.isFinite, usedPercent >= 0, usedPercent <= 100 else { return nil }
         return max(0, min(100, 100 - usedPercent))
-    }
-
-    public var stateWord: String {
-        guard let remainingPercent else { return "—" }
-        switch remainingPercent {
-        case 50...: return "여유"
-        case 15..<50: return "주의"
-        default: return "부족"
-        }
     }
 }
 

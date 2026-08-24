@@ -7,7 +7,8 @@ final class UsageModel: ObservableObject {
     @Published private(set) var claude: ProviderSnapshot = .empty(.claude)
     @Published private(set) var codex: ProviderSnapshot = .empty(.codex)
     @Published private(set) var lastUpdated: Date?
-    @Published private(set) var menuBarSegments: [StatusItemBadge.Segment] = [.init(label: "TG", value: "—")]
+    @Published private(set) var menuBarSegments: [StatusItemBadge.Segment] =
+        [.init(label: "PH", value: "—", provider: nil, remaining: nil)]
 
     private var timer: Timer?
     private var lastClaudeMTime: Date?
@@ -47,12 +48,14 @@ final class UsageModel: ObservableObject {
     private func computeMenuBarSegments() -> [StatusItemBadge.Segment] {
         var parts: [StatusItemBadge.Segment] = []
         if let r = mostConstrainedRemaining(claude) {
-            parts.append(.init(label: "Cl", value: "\(Int(r))%"))
+            parts.append(.init(label: "Cl", value: "\(Int(r))%", provider: .claude, remaining: r))
         }
         if let r = mostConstrainedRemaining(codex) {
-            parts.append(.init(label: "Cx", value: "\(Int(r))%"))
+            parts.append(.init(label: "Cx", value: "\(Int(r))%", provider: .codex, remaining: r))
         }
-        return parts.isEmpty ? [.init(label: "TG", value: "—")] : parts
+        return parts.isEmpty
+            ? [.init(label: "PH", value: "—", provider: nil, remaining: nil)]
+            : parts
     }
 
     private func mostConstrainedRemaining(_ snapshot: ProviderSnapshot) -> Double? {
