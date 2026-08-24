@@ -10,6 +10,13 @@ final class FloatingPanel: NSWindow {
     /// on the event, so an in-flight animation can get out of the way.
     var onInteractionStart: (() -> Void)?
 
+    /// When the panel isn't key yet, the click that activates it gets
+    /// redelivered through sendEvent a second time after activation
+    /// completes — same event, same eventNumber. Without deduping this,
+    /// onInteractionStart fires again on the replay and cancels the
+    /// just-started double-click animation, and onDoubleClick fires twice.
+    private var lastHandledMouseDownEventNumber: Int?
+
     init(contentViewController: NSViewController, size: NSSize) {
         super.init(
             contentRect: NSRect(origin: .zero, size: size),
@@ -40,14 +47,14 @@ final class FloatingPanel: NSWindow {
     /// forwarded, so background-dragging the window and clicking the SwiftUI
     /// buttons keep behaving exactly as before.
     override func sendEvent(_ event: NSEvent) {
-        if event.type == .leftMouseDown {
+        if event.type == .leftMouseDown, event.eventNumber != lastHandledMouseDownEventNumber {
+            lastHandledMouseDownEventNumber = event.eventNumber
             onInteractionStart?()
-        }
 
-        if event.type == .leftMouseDown,
-           event.clickCount == 2,
-           !(contentView?.hitTest(event.locationInWindow) is CornerResizeHandle) {
-            onDoubleClick?()
+            if event.clickCount == 2,
+               !(contentView?.hitTest(event.locationInWindow) is CornerResizeHandle) {
+                onDoubleClick?()
+            }
         }
 
         // Right-clicks are consumed rather than forwarded: the menu is the
