@@ -15,7 +15,6 @@ final class UsageModel: ObservableObject {
     private var lastCodexMTime: Date?
 
     init() {
-        AlertManager.shared.requestAuthorizationIfNeeded()
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             guard let self else { return }
@@ -38,9 +37,6 @@ final class UsageModel: ObservableObject {
         codex = newCodex
         lastUpdated = Date()
         menuBarSegments = computeMenuBarSegments()
-
-        for w in claude.windows { AlertManager.shared.process(window: w) }
-        for w in codex.windows { AlertManager.shared.process(window: w) }
     }
 
     /// Kept as label/value pairs rather than one prebuilt string so the badge
