@@ -3,21 +3,28 @@ import TokenGaugeCore
 
 struct GaugeRow: View {
     let window: UsageWindow
+    var showsHeading: Bool = true
+    var sourceExists: Bool = true
 
     private var color: Color {
         UsagePalette.color(remaining: window.remainingPercent, plenty: .white)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(window.label)
-                    .font(window.labelFont)
-                Spacer()
-                Text(remainingText)
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(color)
-                    .frame(minWidth: 40, alignment: .trailing)
+        VStack(alignment: .leading, spacing: 5) {
+            // Name and value together at the trailing edge, reading the same
+            // way as the paired row's long window ("주간 72%") so a
+            // single-window provider lines up with Claude's weekly above it.
+            HStack(spacing: 8) {
+                if showsHeading {
+                    ProviderHeading(provider: window.provider, sourceExists: sourceExists)
+                }
+                Spacer(minLength: 8)
+                WindowValueLabel(
+                    window: window,
+                    labelColor: window.provider.accentColor,
+                    valueColor: color
+                )
             }
             // Filled by real width rather than a horizontal scale, which would
             // squash the rounded ends flat on a short bar.
@@ -31,32 +38,20 @@ struct GaugeRow: View {
                 }
             }
             .frame(height: 8)
+            // Trailing edge as well, sitting under the value it belongs to —
+            // the same place the paired row puts its long window's reset line.
             if let resetText {
-                Text(resetText)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                HStack {
+                    Spacer()
+                    Text(resetText)
+                        .font(.system(size: GaugeText.resetSize))
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }
 
-    private var remainingText: String {
-        guard let r = window.remainingPercent else { return "—" }
-        return "\(Int(r))%"
-    }
-
     private var resetText: String? { ResetText.of(window) }
-}
-
-extension UsageWindow {
-    /// Windows shorter than a day are set semibold, longer ones regular, so
-    /// that where two sit side by side the short one reads as the distinct
-    /// entry. Keyed off the actual span rather than the label text, and
-    /// applied in both rows so Claude's and Codex's lines follow one rule.
-    var labelFont: Font {
-        windowMinutes < 24 * 60
-            ? Font.subheadline.weight(.semibold)
-            : Font.subheadline
-    }
 }
 
 /// When a window resets, phrased relative to now. Estimated times carry an
@@ -72,7 +67,10 @@ enum ResetText {
         formatter.locale = L.formattingLocale
         formatter.unitsStyle = .short
         let relative = formatter.localizedString(for: date, relativeTo: Date())
-        let isEstimated = window.resetKind == .estimated
+        // Only short windows carry the qualifier. Over a week the estimate's
+        // error is small next to the span, so "약" there is noise rather than
+        // useful precision.
+        let isEstimated = window.resetKind == .estimated && window.windowMinutes < 24 * 60
 
         switch L.resolved {
         case .korean:

@@ -133,113 +133,168 @@ public partial class PanelWindow : Window
         host.Children.Clear();
         var accent = UsagePalette.AccentFor(snapshot.Provider);
 
-        var header = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 7) };
-        header.Children.Add(new TextBlock
-        {
-            Text = snapshot.Provider.DisplayName(),
-            FontSize = 13,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(accent),
-        });
-        if (!snapshot.SourceExists)
-        {
-            header.Children.Add(new TextBlock
-            {
-                Text = "  " + L.T(ko: "데이터 없음", en: "No data", ja: "データなし", zh: "无数据"),
-                FontSize = 10,
-                Foreground = new SolidColorBrush(Color.FromArgb(0x99, 0xFF, 0xFF, 0xFF)),
-                VerticalAlignment = VerticalAlignment.Center,
-            });
-        }
-        host.Children.Add(header);
-
+        // The provider's name lives on the row's first line, directly above
+        // the track it labels, rather than on a heading line of its own.
         if (snapshot.PairedWindows() is { } paired)
         {
-            host.Children.Add(BuildPairedRow(paired.Base, paired.Overlay, accent));
+            host.Children.Add(BuildPairedRow(snapshot, paired.Base, paired.Overlay, accent));
         }
         else if (snapshot.Windows.Count == 0)
         {
-            host.Children.Add(new TextBlock
+            var empty = new Grid();
+            empty.Children.Add(ProviderHeading(snapshot, accent));
+            empty.Children.Add(new TextBlock
             {
                 Text = "—",
                 Foreground = new SolidColorBrush(Color.FromArgb(0x99, 0xFF, 0xFF, 0xFF)),
                 FontSize = 11,
+                HorizontalAlignment = HorizontalAlignment.Right,
             });
+            host.Children.Add(empty);
         }
         else
         {
-            foreach (var window in snapshot.Windows)
+            // Only the first row carries the name, so a provider reporting more
+            // than two windows doesn't repeat its own heading.
+            for (var i = 0; i < snapshot.Windows.Count; i++)
             {
-                host.Children.Add(BuildSingleRow(window, accent));
+                host.Children.Add(BuildSingleRow(snapshot, snapshot.Windows[i], accent, showsHeading: i == 0));
             }
         }
     }
 
-    private static UIElement BuildPairedRow(UsageWindow baseWindow, UsageWindow overlay, Color accent)
+    /// <summary>The provider's mark and name, as a row's leading half.</summary>
+    private static UIElement ProviderHeading(ProviderSnapshot snapshot, Color accent)
+    {
+        var row = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+        row.Children.Add(ProviderMark.Create(snapshot.Provider, 14));
+        row.Children.Add(new TextBlock
+        {
+            Text = snapshot.Provider.DisplayName(),
+            FontSize = 14,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(accent),
+            Margin = new Thickness(5, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        if (!snapshot.SourceExists)
+        {
+            row.Children.Add(new TextBlock
+            {
+                Text = L.T(ko: "데이터 없음", en: "No data", ja: "データなし", zh: "无数据"),
+                FontSize = 10,
+                Margin = new Thickness(6, 0, 0, 0),
+                Foreground = new SolidColorBrush(Color.FromArgb(0x99, 0xFF, 0xFF, 0xFF)),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+        }
+        return row;
+    }
+
+    /// <summary>
+    /// A window's name and value kept together, the name set bold. Shared so
+    /// Claude's weekly and Codex's get one treatment rather than drifting.
+    /// </summary>
+    private static UIElement ValueLabel(
+        UsageWindow window, double size, Brush labelBrush, Brush valueBrush, HorizontalAlignment align)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = align };
+        row.Children.Add(new TextBlock
+        {
+            Text = window.Label,
+            FontSize = size,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = labelBrush,
+        });
+        row.Children.Add(new TextBlock
+        {
+            Text = Percent(window),
+            FontSize = size,
+            Foreground = valueBrush,
+            Margin = new Thickness(4, 0, 0, 0),
+        });
+        return row;
+    }
+
+    private static UIElement BuildPairedRow(
+        ProviderSnapshot snapshot, UsageWindow baseWindow, UsageWindow overlay, Color accent)
     {
         var stack = new StackPanel();
+        var accentBrush = new SolidColorBrush(accent);
 
         var line = new Grid();
-        line.Children.Add(new TextBlock
-        {
-            Text = $"{overlay.Label}  {Percent(overlay)}",
-            FontSize = 12,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(UsagePalette.ColorFor(overlay.RemainingPercent, Colors.White)),
-            HorizontalAlignment = HorizontalAlignment.Left,
-        });
-        line.Children.Add(new TextBlock
-        {
-            Text = $"{baseWindow.Label}  {Percent(baseWindow)}",
-            FontSize = 12,
-            Foreground = new SolidColorBrush(accent),
-            HorizontalAlignment = HorizontalAlignment.Right,
-        });
+        line.Children.Add(ProviderHeading(snapshot, accent));
+        // The long window's name carries the accent too, tying it to the bar
+        // it names.
+        line.Children.Add(ValueLabel(baseWindow, 11, accentBrush, accentBrush, HorizontalAlignment.Right));
         stack.Children.Add(line);
 
         stack.Children.Add(NestedBar(baseWindow, overlay, accent));
 
-        var resets = new Grid { Margin = new Thickness(0, 3, 0, 0) };
+        // The short window reads as one line under the bar — name, value and
+        // reset together — since its old slot above now holds the name.
+        var below = new Grid { Margin = new Thickness(0, 5, 0, 0) };
+        var shortSide = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+        shortSide.Children.Add(ValueLabel(
+            overlay,
+            10,
+            new SolidColorBrush(Colors.White),
+            new SolidColorBrush(UsagePalette.ColorFor(overlay.RemainingPercent, Colors.White)),
+            HorizontalAlignment.Left));
         if (ResetText.Of(overlay) is { } overlayReset)
         {
-            resets.Children.Add(Caption(overlayReset, HorizontalAlignment.Left));
+            var caption = Caption(overlayReset, HorizontalAlignment.Left);
+            caption.Margin = new Thickness(6, 0, 0, 0);
+            shortSide.Children.Add(caption);
         }
+        below.Children.Add(shortSide);
+
         if (ResetText.Of(baseWindow) is { } baseReset)
         {
-            resets.Children.Add(Caption(baseReset, HorizontalAlignment.Right));
+            below.Children.Add(Caption(baseReset, HorizontalAlignment.Right));
         }
-        stack.Children.Add(resets);
+        stack.Children.Add(below);
 
         return stack;
     }
 
-    private static UIElement BuildSingleRow(UsageWindow window, Color accent)
+    private static UIElement BuildSingleRow(
+        ProviderSnapshot snapshot, UsageWindow window, Color accent, bool showsHeading)
     {
         var stack = new StackPanel { Margin = new Thickness(0, 0, 0, 4) };
 
+        // Name on the left and the window's value on the right, laid out the
+        // same way as the paired row so both providers line up.
         var line = new Grid();
-        line.Children.Add(new TextBlock
+        if (showsHeading)
         {
-            Text = window.Label,
-            FontSize = 12,
-            FontWeight = window.WindowMinutes < 24 * 60 ? FontWeights.SemiBold : FontWeights.Normal,
-            Foreground = new SolidColorBrush(Colors.White),
-            HorizontalAlignment = HorizontalAlignment.Left,
-        });
-        line.Children.Add(new TextBlock
-        {
-            Text = Percent(window),
-            FontSize = 12,
-            Foreground = new SolidColorBrush(UsagePalette.ColorFor(window.RemainingPercent, Colors.White)),
-            HorizontalAlignment = HorizontalAlignment.Right,
-        });
+            line.Children.Add(ProviderHeading(snapshot, accent));
+        }
+        line.Children.Add(ValueLabel(
+            window,
+            11,
+            new SolidColorBrush(accent),
+            new SolidColorBrush(UsagePalette.ColorFor(window.RemainingPercent, Colors.White)),
+            HorizontalAlignment.Right));
         stack.Children.Add(line);
 
         stack.Children.Add(SimpleBar(window.RemainingPercent, 8));
 
+        // Trailing edge as well, sitting under the value it belongs to — the
+        // same place the paired row puts its long window's reset line.
         if (ResetText.Of(window) is { } reset)
         {
-            stack.Children.Add(Caption(reset, HorizontalAlignment.Left));
+            var caption = Caption(reset, HorizontalAlignment.Right);
+            caption.Margin = new Thickness(0, 5, 0, 0);
+            stack.Children.Add(caption);
         }
 
         return stack;
@@ -262,7 +317,14 @@ public partial class PanelWindow : Window
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Left,
         };
-        left.Children.Add(ProviderMark.Create(snapshot.Provider, 10));
+        // Nudged in from the panel's own edge padding, which is tight at this
+        // size and left the mark looking stuck to the side.
+        var mark = ProviderMark.Create(snapshot.Provider, 10);
+        if (mark is FrameworkElement markElement)
+        {
+            markElement.Margin = new Thickness(3, 0, 0, 0);
+        }
+        left.Children.Add(mark);
         if (paired?.Overlay.RemainingPercent is { } overlayRemaining)
         {
             left.Children.Add(new TextBlock
@@ -379,7 +441,7 @@ public partial class PanelWindow : Window
     private static TextBlock Caption(string text, HorizontalAlignment alignment) => new()
     {
         Text = text,
-        FontSize = 10,
+        FontSize = 9,
         Foreground = new SolidColorBrush(Color.FromArgb(0x99, 0xFF, 0xFF, 0xFF)),
         HorizontalAlignment = alignment,
     };

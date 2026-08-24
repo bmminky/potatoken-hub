@@ -9,22 +9,27 @@ struct CombinedGaugeRow: View {
     let base: UsageWindow
     let overlay: UsageWindow
     let baseColor: Color
+    var sourceExists: Bool = true
 
     private let trackHeight: CGFloat = 8
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 8) {
-                valueLabel(overlay, color: overlayColor, labelColor: Color.primary)
+                ProviderHeading(provider: base.provider, sourceExists: sourceExists)
                 Spacer(minLength: 8)
                 // The long window's name carries the accent too, tying it to
                 // the bar it names.
-                valueLabel(base, color: baseColor, labelColor: baseColor)
+                WindowValueLabel(window: base, labelColor: baseColor, valueColor: baseColor)
             }
 
             NestedUsageBar(base: base, overlay: overlay, baseColor: baseColor, overlayColor: overlayColor, height: trackHeight)
 
-            HStack(spacing: 8) {
+            // The short window reads as one line under the bar — name, value
+            // and reset together — since its old slot above now holds the
+            // provider's name.
+            HStack(spacing: 6) {
+                WindowValueLabel(window: overlay, size: 10, labelColor: .primary, valueColor: overlayColor)
                 resetLabel(overlay)
                 Spacer(minLength: 8)
                 resetLabel(base)
@@ -39,28 +44,49 @@ struct CombinedGaugeRow: View {
     }
 
     @ViewBuilder
-    private func valueLabel(_ window: UsageWindow, color: Color, labelColor: Color) -> some View {
-        HStack(spacing: 4) {
-            // Same size and weight as GaugeRow's label, so Claude's windows
-            // and Codex's read as one list instead of two treatments.
-            Text(window.label)
-                .font(window.labelFont)
-                .foregroundStyle(labelColor)
-            Text(window.remainingPercent.map { "\(Int($0))%" } ?? "—")
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(color)
-        }
-        .lineLimit(1)
-    }
-
-    @ViewBuilder
     private func resetLabel(_ window: UsageWindow) -> some View {
         if let text = ResetText.of(window) {
             Text(text)
-                .font(.caption2)
+                .font(.system(size: GaugeText.resetSize))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
+    }
+}
+
+/// Text sizes for the gauge rows, kept in one place so both providers stay in
+/// step. The provider's name is deliberately not here — it's set larger, in
+/// ProviderHeading, and shouldn't follow these.
+enum GaugeText {
+    /// The reset lines, quietest of the three.
+    static let resetSize: CGFloat = 9
+}
+
+/// A window's name and value kept together, the name set bold. Shared by the
+/// paired row and the single-window row so Claude's weekly and Codex's get one
+/// treatment rather than drifting apart.
+struct WindowValueLabel: View {
+    let window: UsageWindow
+    /// Point size for both halves. The short window sits on the reset line
+    /// under the bar, so it's set a little smaller than the long window's
+    /// value above it.
+    var size: CGFloat = 11
+    /// The name takes the provider accent on the long window; the value keeps
+    /// whatever meaning it already carried — fixed accent for Claude's weekly,
+    /// usage colors for Codex's and for short windows.
+    let labelColor: Color
+    let valueColor: Color
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(window.label)
+                .font(.system(size: size, weight: .semibold))
+                .foregroundStyle(labelColor)
+            Text(window.remainingPercent.map { "\(Int($0))%" } ?? "—")
+                .font(.system(size: size).monospacedDigit())
+                .foregroundStyle(valueColor)
+        }
+        .lineLimit(1)
     }
 }
 

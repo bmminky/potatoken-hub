@@ -48,30 +48,35 @@ struct FullContent: View {
     private func providerSection(snapshot: ProviderSnapshot) -> some View {
         let provider = snapshot.provider
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                ProviderMark(provider: provider)
-                Text(provider.rawValue)
-                    .font(.headline)
-                    .foregroundStyle(provider.accentColor)
-                Spacer()
-                if !snapshot.sourceExists {
-                    Text(L.t(ko: "데이터 없음", en: "No data", ja: "データなし", zh: "无数据"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
             // Exactly two windows collapse onto one track — the long window as
             // the bar, the short one laid over it — so a provider takes a
-            // single row however many windows it reports.
+            // single row however many windows it reports. The provider's name
+            // lives inside that row's first line, directly above the track,
+            // rather than on a heading line of its own.
             if let (base, overlay) = pairedWindows(snapshot) {
-                CombinedGaugeRow(base: base, overlay: overlay, baseColor: provider.accentColor)
+                CombinedGaugeRow(
+                    base: base,
+                    overlay: overlay,
+                    baseColor: provider.accentColor,
+                    sourceExists: snapshot.sourceExists
+                )
             } else if snapshot.windows.isEmpty {
-                Text("—")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
+                HStack(spacing: 8) {
+                    ProviderHeading(provider: provider, sourceExists: snapshot.sourceExists)
+                    Spacer(minLength: 8)
+                    Text("—")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
             } else {
-                ForEach(snapshot.windows) { window in
-                    GaugeRow(window: window)
+                // Only the first row carries the name, so a provider reporting
+                // more than two windows doesn't repeat its own heading.
+                ForEach(Array(snapshot.windows.enumerated()), id: \.element.id) { index, window in
+                    GaugeRow(
+                        window: window,
+                        showsHeading: index == 0,
+                        sourceExists: snapshot.sourceExists
+                    )
                 }
             }
         }
@@ -116,6 +121,10 @@ private struct CompactRow: View {
                 // dropping the word leaves the width to the gauge. Smaller
                 // than the large view's mark so it doesn't crowd the bar.
                 ProviderMark(provider: snapshot.provider, size: 10)
+                    // Nudged in from the panel's own edge padding, which is
+                    // tight at this size and left the mark looking stuck to
+                    // the side. Everything up to the spacer shifts with it.
+                    .padding(.leading, 3)
                 // The short window sits on the left and the long one on the
                 // right, the same way round as the large view's combined row.
                 if let overlay = paired?.overlay, let remaining = overlay.remainingPercent {

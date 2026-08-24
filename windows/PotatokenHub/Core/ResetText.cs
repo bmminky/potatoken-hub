@@ -12,7 +12,10 @@ public static class ResetText
         if (window.ResetDate is not { } date) return null;
         var now = nowOverride ?? DateTime.Now;
         var relative = Relative(date - now);
-        var estimated = window.ResetKind == ResetKind.Estimated;
+        // Only short windows carry the qualifier. Over a week the estimate's
+        // error is small next to the span, so it's noise rather than useful
+        // precision.
+        var estimated = window.ResetKind == ResetKind.Estimated && window.WindowMinutes < 24 * 60;
 
         return L.Resolved switch
         {

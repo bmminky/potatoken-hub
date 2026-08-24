@@ -36,22 +36,68 @@ struct ProviderMark: View {
     var size: CGFloat = 13
 
     var body: some View {
-        Group {
-            switch provider {
-            case .claude:
-                BurstShape(spokes: 11)
-                    .stroke(
-                        provider.accentColor,
-                        style: StrokeStyle(lineWidth: size * 0.13, lineCap: .round)
-                    )
-            case .codex:
-                Image(systemName: "chevron.left.forwardslash.chevron.right")
-                    .font(.system(size: size * 0.78, weight: .semibold))
-                    .foregroundStyle(provider.accentColor)
+        switch provider {
+        case .claude:
+            BurstShape(spokes: 11)
+                .stroke(
+                    provider.accentColor,
+                    style: StrokeStyle(lineWidth: size * 0.13, lineCap: .round)
+                )
+                .frame(width: size, height: size)
+        case .codex:
+            // Height only. This glyph is wider than it is tall, so boxing it
+            // into the same square as the burst let it spill past both sides —
+            // which read as Codex's mark starting further left than Claude's.
+            // Taking its natural width puts the two leading edges together.
+            Image(systemName: "chevron.left.forwardslash.chevron.right")
+                .font(.system(size: size * 0.78, weight: .semibold))
+                .foregroundStyle(provider.accentColor)
+                .frame(height: size)
+        }
+    }
+}
+
+/// The provider's mark and name, drawn as the leading half of a gauge row's
+/// first line so it sits directly above the track it labels, rather than on a
+/// heading line of its own.
+struct ProviderHeading: View {
+    let provider: Provider
+    var sourceExists: Bool = true
+
+    private let markSize: CGFloat = 14
+    private let nameSize: CGFloat = 14
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            ProviderMark(provider: provider, size: markSize)
+                // The mark is a shape, so it has no baseline of its own and
+                // would fall back to centering on the text's full line box —
+                // which includes descender space and leaves it sitting low.
+                // Give it a baseline that puts its center level with the
+                // middle of the capitals beside it instead.
+                .alignmentGuide(.firstTextBaseline) { d in
+                    d.height / 2 + capHalfHeight + opticalLift
+                }
+            Text(provider.rawValue)
+                .font(.system(size: nameSize, weight: .semibold))
+                .foregroundStyle(provider.accentColor)
+            if !sourceExists {
+                Text(L.t(ko: "데이터 없음", en: "No data", ja: "データなし", zh: "无数据"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
-        .frame(width: size, height: size)
+        .lineLimit(1)
     }
+
+    /// Half the cap height of the name's font, measured up from its baseline.
+    private var capHalfHeight: CGFloat {
+        NSFont.systemFont(ofSize: nameSize, weight: .semibold).capHeight / 2
+    }
+
+    /// Geometric centering still reads a touch low against the letters, since
+    /// both marks carry more weight in their lower half than capitals do.
+    private let opticalLift: CGFloat = 0.5
 }
 
 /// Spokes radiating from a common center, like an asterisk — the shape of
