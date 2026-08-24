@@ -109,14 +109,21 @@ private struct CompactRow: View {
     private var paired: (base: UsageWindow, overlay: UsageWindow)? { pairedWindows(snapshot) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack {
-                // Color only here — no mark or outline; at this size the row
-                // needs to stay compact.
-                Text(snapshot.provider.rawValue)
-                    .font(.caption.bold())
-                    .foregroundStyle(snapshot.provider.accentColor)
-                Spacer()
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 5) {
+                // The mark alone stands in for the provider's name here — at
+                // this size the accent color already tells the two apart, and
+                // dropping the word leaves the width to the gauge. Smaller
+                // than the large view's mark so it doesn't crowd the bar.
+                ProviderMark(provider: snapshot.provider, size: 10)
+                // The short window sits on the left and the long one on the
+                // right, the same way round as the large view's combined row.
+                if let overlay = paired?.overlay, let remaining = overlay.remainingPercent {
+                    Text("\(Int(remaining))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(UsagePalette.color(remaining: remaining, plenty: .primary))
+                }
+                Spacer(minLength: 6)
                 if let remaining = displayWindow?.remainingPercent {
                     Text("\(Int(remaining))%")
                         .font(.caption.monospacedDigit())
@@ -130,8 +137,7 @@ private struct CompactRow: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            // Same nested bar shape as the large view: weekly as the bar,
-            // 5-hour capped at weekly's own extent and drawn over it.
+            // Same nested bar shape as the large view.
             if let paired {
                 NestedUsageBar(
                     base: paired.base,

@@ -252,15 +252,30 @@ public partial class PanelWindow : Window
         var paired = snapshot.PairedWindows();
         var display = paired?.Base ?? snapshot.Windows.FirstOrDefault();
 
-        var line = new Grid { Margin = new Thickness(0, 0, 0, 3) };
-        line.Children.Add(new TextBlock
+        var line = new Grid { Margin = new Thickness(0, 0, 0, 5) };
+
+        // The mark alone stands in for the provider's name at this size, with
+        // the short window's percentage beside it — the same left-to-right
+        // order as the large view.
+        var left = new StackPanel
         {
-            Text = snapshot.Provider.DisplayName(),
-            FontSize = 11,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(accent),
+            Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Left,
-        });
+        };
+        left.Children.Add(ProviderMark.Create(snapshot.Provider, 10));
+        if (paired?.Overlay.RemainingPercent is { } overlayRemaining)
+        {
+            left.Children.Add(new TextBlock
+            {
+                Text = $"{(int)overlayRemaining}%",
+                FontSize = 11,
+                Margin = new Thickness(5, 0, 0, 0),
+                Foreground = new SolidColorBrush(UsagePalette.ColorFor(overlayRemaining, Colors.White)),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+        }
+        line.Children.Add(left);
+
         line.Children.Add(new TextBlock
         {
             Text = display is null ? "—" : Percent(display),
