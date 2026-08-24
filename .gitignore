@@ -6,3 +6,8 @@ dist/
 
 # Generated from Resources/AppIcon-source.png by Scripts/build-app.sh
 Resources/AppIcon.icns
+
+# Windows build output
+windows/**/bin/
+windows/**/obj/
+publish/
