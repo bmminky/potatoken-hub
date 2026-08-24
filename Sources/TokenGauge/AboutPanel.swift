@@ -5,7 +5,7 @@ import TokenGaugeCore
 /// version never drift from Info.plist.
 enum AboutPanel {
     private static let creator = "bmminky"
-    private static let repository = "https://github.com/bmminky/TokenGauge"
+    private static let repository = "https://github.com/bmminky/potatoken-hub"
 
     static var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "potatoken hub"
