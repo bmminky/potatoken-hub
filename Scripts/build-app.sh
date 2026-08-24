@@ -6,8 +6,8 @@ cd "$(dirname "$0")/.."
 # the user sees in Finder, the menu bar, and the about panel.
 PRODUCT_NAME="TokenGauge"
 APP_NAME="potatoken hub"
-VERSION="1.9.0"
-BUILD_NUMBER="9"
+VERSION="1.10.0"
+BUILD_NUMBER="10"
 
 # Deliberately unchanged across the rename. A bundle identifier is the app's
 # stable identity, and repointing it would strand the preferences (saved panel
