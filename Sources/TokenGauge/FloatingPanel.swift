@@ -17,6 +17,14 @@ final class FloatingPanel: NSWindow {
     /// just-started double-click animation, and onDoubleClick fires twice.
     private var lastHandledMouseDownEventNumber: Int?
 
+    /// Where the panel sat at the previous mouse-down. Dragging the window a
+    /// long way — across displays, say — is usually done in short strokes:
+    /// grab, pull, release, grab again. Two of those grabs landing inside the
+    /// double-click interval is reported as clickCount 2, and acting on it
+    /// resized the panel mid-drag. A real double-click leaves the window where
+    /// it was between the two clicks; a re-grab doesn't.
+    private var originAtLastMouseDown: NSPoint?
+
     init(contentViewController: NSViewController, size: NSSize) {
         super.init(
             contentRect: NSRect(origin: .zero, size: size),
@@ -43,6 +51,56 @@ final class FloatingPanel: NSWindow {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
+    /// AppKit's default implementation fits the frame to whichever screen the
+    /// window is landing on, and will resize it to do so — which is why
+    /// dragging the panel to a second display could change its size out from
+    /// under the presets. The panel is small and positions itself against the
+    /// right screen already (see AppDelegate.panelScreen), so take the frame
+    /// as proposed.
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        frameRect
+    }
+
+    /// The size the panel is meant to be, or nil before one has been chosen.
+    ///
+    /// When a drag ends on a display with a different backing scale, AppKit
+    /// runs its own frame adjustment (`_setFrameAfterMove:` →
+    /// `_setFrame:fromAdjustmentToScreen:`) and restores whatever size the
+    /// window last had on *that* display. For a two-preset panel that reads as
+    /// the window spontaneously switching size every time it crosses displays.
+    /// Anything that isn't a deliberate resize gets held to this size instead.
+    var enforcedSize: NSSize?
+
+    /// Raised while the app is deliberately resizing — the size toggle, its
+    /// animation, restoring a saved frame. Those are allowed to disagree with
+    /// `enforcedSize`, since they're the ones changing it.
+    var isPerformingOwnResize = false
+
+    override func setFrame(_ frameRect: NSRect, display flag: Bool) {
+        var rect = frameRect
+        if let enforcedSize,
+           rect.size != enforcedSize,
+           !isPerformingOwnResize,
+           // A held mouse button means the user is dragging an edge or a
+           // corner handle, which is a resize we should honor. AppKit's
+           // post-move adjustment runs after the button comes back up.
+           NSEvent.pressedMouseButtons == 0 {
+            // Take neither half of the adjustment. Its origin was computed for
+            // the size it wanted, so keeping that origin while overriding the
+            // size lands the panel off by the difference — which reads as the
+            // window jumping the moment a drag is released. Pinning the
+            // top-left to where the panel already is leaves it exactly where
+            // it was dropped.
+            rect = NSRect(
+                x: frame.origin.x,
+                y: frame.maxY - enforcedSize.height,
+                width: enforcedSize.width,
+                height: enforcedSize.height
+            )
+        }
+        super.setFrame(rect, display: flag)
+    }
+
     /// Observes double-clicks without consuming them: the event is still
     /// forwarded, so background-dragging the window and clicking the SwiftUI
     /// buttons keep behaving exactly as before.
@@ -51,8 +109,12 @@ final class FloatingPanel: NSWindow {
             lastHandledMouseDownEventNumber = event.eventNumber
             onInteractionStart?()
 
+            let previousOrigin = originAtLastMouseDown
+            originAtLastMouseDown = frame.origin
+
             if event.clickCount == 2,
-               !(contentView?.hitTest(event.locationInWindow) is CornerResizeHandle) {
+               !(contentView?.hitTest(event.locationInWindow) is CornerResizeHandle),
+               !panelMoved(since: previousOrigin) {
                 onDoubleClick?()
             }
         }
@@ -66,5 +128,15 @@ final class FloatingPanel: NSWindow {
         }
 
         super.sendEvent(event)
+    }
+
+    /// Whether the panel has been dragged since the previous mouse-down. The
+    /// tolerance absorbs the pixel or so a click can nudge the window without
+    /// the user meaning to move it.
+    private func panelMoved(since previousOrigin: NSPoint?) -> Bool {
+        guard let previousOrigin else { return false }
+        let tolerance: CGFloat = 2
+        return abs(frame.origin.x - previousOrigin.x) > tolerance
+            || abs(frame.origin.y - previousOrigin.y) > tolerance
     }
 }

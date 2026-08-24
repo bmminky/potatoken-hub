@@ -22,6 +22,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var smallSize = CGSize(width: PanelSize.smallWidth, height: PanelSize.smallFallbackHeight)
     private var largeSize = CGSize(width: PanelSize.largeWidth, height: PanelSize.largeFallbackHeight)
 
+    enum SizePreset {
+        case small
+        case large
+    }
+
+    /// Which preset the user last chose. Held as state rather than read back
+    /// off the window, because the whole point of tracking it is to recover
+    /// when something else has already changed the window's size — inferring
+    /// the preset from a size that's wrong just ratifies the wrong size.
+    private var activePreset: SizePreset = .small {
+        didSet { panel?.enforcedSize = size(of: activePreset) }
+    }
+
+    /// Runs a deliberate resize, so the panel lets it through instead of
+    /// holding the frame to the current preset.
+    private func performingOwnResize(_ body: () -> Void) {
+        panel.isPerformingOwnResize = true
+        body()
+        panel.isPerformingOwnResize = false
+    }
+
+    private func size(of preset: SizePreset) -> CGSize {
+        preset == .large ? largeSize : smallSize
+    }
+
+    /// Used only where there's genuinely no recorded intent to consult: a
+    /// frame saved by an older build, or a size the user just dragged.
+    private func preset(nearestTo size: CGSize) -> SizePreset {
+        size.width >= (smallSize.width + largeSize.width) / 2 ? .large : .small
+    }
+
     private static let savedFrameKey = "TokenGauge.panelFrame"
     private static let hasShownBeforeKey = "TokenGauge.hasShownBefore"
     private static let alwaysOnTopKey = "TokenGauge.alwaysOnTop"
@@ -99,6 +130,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel = FloatingPanel(contentViewController: hosting, size: largeSize)
         panel.minSize = smallSize
         panel.maxSize = largeSize
+        panel.enforcedSize = size(of: activePreset)
         panel.level = isAlwaysOnTop ? .floating : .normal
         panel.delegate = self
         panel.onDoubleClick = { [weak self] in self?.toggleSizePreset() }
@@ -106,12 +138,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.onInteractionStart = { [weak self] in self?.finishSizeAnimation() }
         addCornerResizeHandles()
 
+        // Overriding constrainFrameRect also gave up AppKit's one useful part:
+        // hauling a window back when its display disappears. Watch for the
+        // display set changing and do that rescue ourselves.
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.recoverPanelIfOffScreen() }
+        }
+
         model.$menuBarSegments
             .receive(on: RunLoop.main)
             .sink { [weak self] segments in
                 self?.renderBadge(segments)
             }
             .store(in: &cancellables)
+    }
+
+    /// Brings the panel back beside the status item if the display it was on
+    /// went away. Without this it would sit at coordinates no screen covers —
+    /// invisible, and not clickable to get back.
+    private func recoverPanelIfOffScreen() {
+        guard isPanelVisible, !isFrameOnScreen(panel.frame) else { return }
+        performingOwnResize {
+            panel.setFrame(NSRect(origin: panel.frame.origin, size: size(of: activePreset)), display: false)
+        }
+        positionNearStatusItem()
     }
 
     private func renderBadge(_ segments: [StatusItemBadge.Segment]? = nil) {
@@ -201,11 +255,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func positionTopRight() {
         guard let screen = statusItemScreen else { return }
         let visible = screen.visibleFrame
+        activePreset = .small
         let size = smallSize
         let margin: CGFloat = 16
         let x = visible.maxX - size.width - margin
         let y = visible.maxY - size.height - margin
-        panel.setFrame(NSRect(x: x, y: y, width: size.width, height: size.height), display: false)
+        performingOwnResize {
+            panel.setFrame(NSRect(x: x, y: y, width: size.width, height: size.height), display: false)
+        }
     }
 
     /// Restores the remembered position but snaps the size back to whichever
@@ -213,11 +270,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// build that allowed arbitrary sizes. There's no "drag" here, so just
     /// judge by width against its own midpoint.
     private func restoreNearPreset(_ saved: NSRect) {
-        let widthBoundary = (smallSize.width + largeSize.width) / 2
-        let size = saved.size.width >= widthBoundary ? largeSize : smallSize
+        activePreset = preset(nearestTo: saved.size)
+        let size = size(of: activePreset)
         let topY = saved.origin.y + saved.size.height
         let origin = NSPoint(x: saved.origin.x, y: topY - size.height)
-        panel.setFrame(NSRect(origin: origin, size: size), display: false)
+        performingOwnResize {
+            panel.setFrame(NSRect(origin: origin, size: size), display: false)
+        }
     }
 
     private func closePanel() {
@@ -276,9 +335,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Double-clicking the panel switches to the other preset.
     private func toggleSizePreset() {
-        let currentWidth = panel.frame.width
-        let isLarge = abs(currentWidth - largeSize.width) <= abs(currentWidth - smallSize.width)
-        animatePanel(to: isLarge ? smallSize : largeSize, keepingHorizontalCenter: true, style: .springy)
+        let target: SizePreset = activePreset == .large ? .small : .large
+        activePreset = target
+        animatePanel(to: size(of: target), keepingHorizontalCenter: true, style: .springy)
     }
 
     enum ResizeStyle {
@@ -309,10 +368,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         switch style {
         case .crisp:
+            panel.isPerformingOwnResize = true
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.18
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
                 panel.animator().setFrame(targetFrame, display: true)
+            } completionHandler: { [weak self] in
+                MainActor.assumeIsolated { self?.panel.isPerformingOwnResize = false }
             }
         case .springy:
             springResize(to: targetFrame)
@@ -338,15 +400,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.maxSize = pending.maxSize
 
         let current = panel.frame
-        panel.setFrame(
-            NSRect(
-                x: current.origin.x,
-                y: current.maxY - pending.target.height,
-                width: pending.target.width,
-                height: pending.target.height
-            ),
-            display: true
-        )
+        performingOwnResize {
+            panel.setFrame(
+                NSRect(
+                    x: current.origin.x,
+                    y: current.maxY - pending.target.height,
+                    width: pending.target.width,
+                    height: pending.target.height
+                ),
+                display: true
+            )
+        }
     }
 
     /// Drives the frame frame-by-frame instead of handing it to
@@ -373,6 +437,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let duration: CFTimeInterval = 0.5
         let startTime = CACurrentMediaTime()
+        panel.isPerformingOwnResize = true
 
         let timer = Timer(timeInterval: 1.0 / 120.0, repeats: true) { [weak self] timer in
             MainActor.assumeIsolated {
@@ -401,6 +466,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self.panel.minSize = savedMin
                     self.panel.maxSize = savedMax
                     self.panel.setFrame(targetFrame, display: true)
+                    self.panel.isPerformingOwnResize = false
                 }
             }
         }
@@ -613,7 +679,39 @@ extension AppDelegate: NSWindowDelegate {
         guard let window = notification.object as? NSWindow, window === panel else { return }
         let start = resizeStartSize ?? panel.frame.size
         resizeStartSize = nil
+        // AppKit also ends a "live resize" for things the user never dragged —
+        // moving between displays with different backing scales, for one. With
+        // no size delta there's nothing to snap, and running anyway would let
+        // an incidental callback restyle the panel.
+        guard panel.frame.size != start else { return }
         snapToNearestPresetIfNeeded(draggedFrom: start)
+    }
+
+    /// Puts the panel back on its preset if anything resized it while it moved
+    /// between displays. Its size is chosen by the user's double-click, not by
+    /// which screen it happens to be on, so a screen change should never be
+    /// able to change it.
+    func windowDidChangeScreen(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === panel else { return }
+        // Don't fight a drag in progress or the toggle's own animation, both of
+        // which are deliberately mid-flight between presets.
+        guard !panel.inLiveResize, sizeAnimation == nil else { return }
+
+        let target = size(of: activePreset)
+        guard panel.frame.size != target else { return }
+
+        // Anchored at the top-left, so restoring the size doesn't also shift
+        // the panel away from where the user just dropped it.
+        let frame = panel.frame
+        panel.setFrame(
+            NSRect(
+                x: frame.origin.x,
+                y: frame.maxY - target.height,
+                width: target.width,
+                height: target.height
+            ),
+            display: true
+        )
     }
 
     /// Also called manually by the top-corner resize handles, since dragging
@@ -622,6 +720,7 @@ extension AppDelegate: NSWindowDelegate {
     func snapToNearestPresetIfNeeded(draggedFrom start: CGSize) {
         let current = panel.frame.size
         let target = nearestPreset(to: current, draggedFrom: start)
+        activePreset = preset(nearestTo: target)
 
         // A vertical drag never asked the width to change, so growing it off
         // one side looks like the panel lunging sideways. Keep it centered on
