@@ -32,35 +32,70 @@ public static class CodexUsageReader
     }
 
     /// <summary>
-    /// The Codex CLI uses the same ~/.codex layout on Windows as on macOS.
+    /// Where to look for session logs, most likely first.
+    ///
+    /// CODEX_HOME wins when set, since that's how the CLI itself is relocated;
+    /// it may list several roots separated by ';' or ','. Otherwise the usual
+    /// ~/.codex layout, which is the same on Windows as on macOS.
+    ///
+    /// Both the live and the archived directory are searched: the CLI moves
+    /// finished sessions into archived_sessions, so looking only at sessions/
+    /// can leave the newest record behind and report a days-old snapshot as
+    /// though it were current.
     /// </summary>
-    public static string DefaultSessionsDir() => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-        ".codex",
-        "sessions");
+    public static IReadOnlyList<string> DefaultSessionsDirs()
+    {
+        var roots = new List<string>();
+
+        var codexHome = Environment.GetEnvironmentVariable("CODEX_HOME");
+        if (!string.IsNullOrWhiteSpace(codexHome))
+        {
+            roots.AddRange(codexHome
+                .Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        }
+        else
+        {
+            roots.Add(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ".codex"));
+        }
+
+        return roots
+            .SelectMany(root => new[]
+            {
+                Path.Combine(root, "sessions"),
+                Path.Combine(root, "archived_sessions"),
+            })
+            .ToList();
+    }
 
     public static ProviderSnapshot ReadSnapshot(
-        string? sessionsDir = null,
+        IReadOnlyList<string>? sessionsDirs = null,
         DateTime? nowOverride = null,
         int candidateFileCount = 8)
     {
-        sessionsDir ??= DefaultSessionsDir();
+        sessionsDirs ??= DefaultSessionsDirs();
         var now = nowOverride ?? DateTime.Now;
 
-        if (!Directory.Exists(sessionsDir)) return ProviderSnapshot.Empty(Provider.Codex);
+        var present = sessionsDirs.Where(Directory.Exists).ToList();
+        if (present.Count == 0) return ProviderSnapshot.Empty(Provider.Codex);
 
-        List<FileInfo> files;
-        try
+        // Pooled across every directory before sorting, so the newest record
+        // wins wherever it happens to live.
+        var files = new List<FileInfo>();
+        foreach (var dir in present)
         {
-            files = new DirectoryInfo(sessionsDir)
-                .EnumerateFiles("*.jsonl", SearchOption.AllDirectories)
-                .OrderByDescending(f => f.LastWriteTime)
-                .ToList();
+            try
+            {
+                files.AddRange(new DirectoryInfo(dir)
+                    .EnumerateFiles("*.jsonl", SearchOption.AllDirectories));
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                continue;
+            }
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            return ProviderSnapshot.Empty(Provider.Codex);
-        }
+        files = files.OrderByDescending(f => f.LastWriteTime).ToList();
 
         if (files.Count == 0) return ProviderSnapshot.Empty(Provider.Codex);
 

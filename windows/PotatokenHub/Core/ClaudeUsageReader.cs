@@ -22,13 +22,54 @@ public static class ClaudeUsageReader
     }
 
     /// <summary>
-    /// The Windows Claude desktop app stores its roaming data under %APPDATA%\Claude,
-    /// mirroring ~/Library/Application Support/Claude on macOS.
+    /// Where the Windows Claude desktop app keeps its usage history.
+    ///
+    /// %APPDATA%\Claude mirrors ~/Library/Application Support/Claude on macOS
+    /// and covers the ordinary installer, but the Store packaged build redirects
+    /// roaming data into its own container and some builds install per-machine
+    /// instead, so several forms are tried before giving up. Checking only the
+    /// first left the app reporting "No data" on installs that were working
+    /// fine.
     /// </summary>
-    public static string DefaultPath() => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "Claude",
-        "plan-usage-history.json");
+    public static IReadOnlyList<string> CandidatePaths()
+    {
+        var overridePath = Environment.GetEnvironmentVariable("POTATOKEN_CLAUDE_HISTORY");
+        if (!string.IsNullOrWhiteSpace(overridePath)) return [overridePath];
+
+        const string fileName = "plan-usage-history.json";
+        var roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+        var paths = new List<string>
+        {
+            Path.Combine(roaming, "Claude", fileName),
+            Path.Combine(roaming, "Claude-3p", fileName),
+            Path.Combine(local, "Claude", fileName),
+        };
+
+        // The packaged build's container is named with a publisher hash that
+        // varies per install, so it has to be matched rather than spelled out.
+        try
+        {
+            var packages = Path.Combine(local, "Packages");
+            if (Directory.Exists(packages))
+            {
+                paths.AddRange(Directory
+                    .EnumerateDirectories(packages, "Claude_*")
+                    .Select(dir => Path.Combine(dir, "LocalCache", "Roaming", "Claude", fileName)));
+            }
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // Leave the plain candidates to speak for themselves.
+        }
+
+        return paths;
+    }
+
+    /// <summary>The first candidate that exists, or the primary one if none do.</summary>
+    public static string DefaultPath() =>
+        CandidatePaths().FirstOrDefault(File.Exists) ?? CandidatePaths()[0];
 
     public static ProviderSnapshot ReadSnapshot(string? path = null, DateTime? nowOverride = null)
     {

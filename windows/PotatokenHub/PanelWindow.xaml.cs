@@ -195,12 +195,15 @@ public partial class PanelWindow : Window
         {
             BuildLargeSection(LargeClaude, _model.Claude);
             BuildLargeSection(LargeCodex, _model.Codex);
+            // Formatted with the display language's culture, not the machine's
+            // regional one. Windows keeps those separate, so an English display
+            // language on a Korean region was printing "Updated 오전 12:44".
             UpdatedText.Text = _model.LastUpdated is { } updated
                 ? L.T(
-                    ko: $"업데이트 {updated:t}",
-                    en: $"Updated {updated:t}",
-                    ja: $"更新 {updated:t}",
-                    zh: $"更新于 {updated:t}")
+                    ko: $"업데이트 {updated.ToString("t", L.FormattingCulture)}",
+                    en: $"Updated {updated.ToString("t", L.FormattingCulture)}",
+                    ja: $"更新 {updated.ToString("t", L.FormattingCulture)}",
+                    zh: $"更新于 {updated.ToString("t", L.FormattingCulture)}")
                 : "";
         }
         else
