@@ -28,9 +28,6 @@ public partial class App : Application
         };
         _tray.MouseClick += OnTrayClick;
 
-        AlertManager.Shared.Notify = (title, body) =>
-            _tray.ShowBalloonTip(5000, title, body, ToolTipIcon.None);
-
         _model.PropertyChanged += (_, _) => UpdateTray();
         UpdateTray();
 

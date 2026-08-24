@@ -29,11 +29,6 @@ public sealed class UsageModel : INotifyPropertyChanged
         Codex = CodexUsageReader.ReadSnapshot();
         LastUpdated = DateTime.Now;
 
-        foreach (var window in Claude.Windows.Concat(Codex.Windows))
-        {
-            AlertManager.Shared.Process(window);
-        }
-
         Notify(nameof(Claude));
         Notify(nameof(Codex));
         Notify(nameof(LastUpdated));
