@@ -33,22 +33,26 @@ struct FullContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            providerSection(title: "Claude", snapshot: model.claude)
+            providerSection(snapshot: model.claude)
             Divider()
-            providerSection(title: "Codex", snapshot: model.codex)
+            providerSection(snapshot: model.codex)
             Divider()
             FooterView(model: model, onHide: onHide)
         }
         .padding(.horizontal, 16)
         .padding(.top, 16)
-        .padding(.bottom, 28)
+        .padding(.bottom, 23)
     }
 
     @ViewBuilder
-    private func providerSection(title: String, snapshot: ProviderSnapshot) -> some View {
+    private func providerSection(snapshot: ProviderSnapshot) -> some View {
+        let provider = snapshot.provider
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(title).font(.headline)
+            HStack(spacing: 6) {
+                ProviderMark(provider: provider)
+                Text(provider.rawValue)
+                    .font(.headline)
+                    .foregroundStyle(provider.accentColor)
                 Spacer()
                 if !snapshot.sourceExists {
                     Text("데이터 없음")
@@ -81,8 +85,8 @@ struct MinimalContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            CompactRow(title: "Claude", snapshot: model.claude)
-            CompactRow(title: "Codex", snapshot: model.codex)
+            CompactRow(snapshot: model.claude)
+            CompactRow(snapshot: model.codex)
         }
         .padding(.horizontal, 8)
         .padding(.top, 8)
@@ -91,7 +95,6 @@ struct MinimalContent: View {
 }
 
 private struct CompactRow: View {
-    let title: String
     let snapshot: ProviderSnapshot
 
     private var remaining: Double? {
@@ -102,8 +105,11 @@ private struct CompactRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack {
-                Text(title)
+                // Color only here — no mark or outline; at this size the row
+                // needs to stay compact.
+                Text(snapshot.provider.rawValue)
                     .font(.caption.bold())
+                    .foregroundStyle(snapshot.provider.accentColor)
                 Spacer()
                 if let remaining {
                     Text("\(Int(remaining))%")
@@ -137,14 +143,17 @@ private struct FooterView: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 4)
-            Button("새로고침") { model.refresh() }
-                .font(.caption)
-                .lineLimit(1)
+            Button { model.refresh() } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .help("새로고침")
+
             // Hides the panel only; the app keeps running in the menu bar.
             // Quitting is in the status item's right-click menu.
-            Button("숨기기") { onHide() }
-                .font(.caption)
-                .lineLimit(1)
+            Button { onHide() } label: {
+                Image(systemName: "eye.slash")
+            }
+            .help("숨기기")
         }
         .controlSize(.small)
     }

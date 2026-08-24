@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var isPanelVisible = false
     private var cancellables: Set<AnyCancellable> = []
     private var resizeStartSize: CGSize?
+    private var sizeAnimation: Timer?
 
     /// The 2 snap presets. Heights are measured from the real SwiftUI content
     /// at launch (see applicationDidFinishLaunching) instead of guessed, so
@@ -73,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.minSize = smallSize
         panel.maxSize = largeSize
         panel.delegate = self
+        panel.onDoubleClick = { [weak self] in self?.toggleSizePreset() }
         addCornerResizeHandles()
 
         model.$menuBarText
@@ -219,6 +221,116 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSScreen.screens.contains { $0.frame.intersects(frame) }
     }
 
+    /// Double-clicking the panel switches to the other preset.
+    private func toggleSizePreset() {
+        let currentWidth = panel.frame.width
+        let isLarge = abs(currentWidth - largeSize.width) <= abs(currentWidth - smallSize.width)
+        animatePanel(to: isLarge ? smallSize : largeSize, keepingHorizontalCenter: true, style: .springy)
+    }
+
+    enum ResizeStyle {
+        /// Short ease-out, for settling a size the user just dragged.
+        case crisp
+        /// Overshoots and rebounds, for the double-click toggle.
+        case springy
+    }
+
+    /// Resizes around the top edge, so the panel never walks up or down the
+    /// screen as it changes tier.
+    private func animatePanel(to target: CGSize, keepingHorizontalCenter: Bool, style: ResizeStyle = .crisp) {
+        let current = panel.frame
+        guard target != current.size else { return }
+
+        var newX = keepingHorizontalCenter
+            ? current.midX - target.width / 2
+            : current.origin.x
+
+        if let visible = NSScreen.main?.visibleFrame {
+            newX = min(max(newX, visible.minX + 4), visible.maxX - target.width - 4)
+        }
+
+        let targetFrame = NSRect(
+            origin: NSPoint(x: newX, y: current.maxY - target.height),
+            size: target
+        )
+
+        switch style {
+        case .crisp:
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.18
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                panel.animator().setFrame(targetFrame, display: true)
+            }
+        case .springy:
+            springResize(to: targetFrame)
+        }
+    }
+
+    /// Drives the frame frame-by-frame instead of handing it to
+    /// NSAnimationContext, because the bounce needs to briefly pass *beyond*
+    /// the target size and NSWindow silently constrains any frame it is given
+    /// — animated or not — to minSize/maxSize. Those limits are widened for
+    /// the duration and restored at the end.
+    private func springResize(to targetFrame: NSRect) {
+        sizeAnimation?.invalidate()
+
+        let startFrame = panel.frame
+        let savedMin = panel.minSize
+        let savedMax = panel.maxSize
+        let slack: CGFloat = 90
+        panel.minSize = NSSize(
+            width: max(min(startFrame.width, targetFrame.width) - slack, 1),
+            height: max(min(startFrame.height, targetFrame.height) - slack, 1)
+        )
+        panel.maxSize = NSSize(
+            width: max(startFrame.width, targetFrame.width) + slack,
+            height: max(startFrame.height, targetFrame.height) + slack
+        )
+
+        let duration: CFTimeInterval = 0.5
+        let startTime = CACurrentMediaTime()
+
+        let timer = Timer(timeInterval: 1.0 / 120.0, repeats: true) { [weak self] timer in
+            MainActor.assumeIsolated {
+                guard let self else {
+                    timer.invalidate()
+                    return
+                }
+
+                let progress = min((CACurrentMediaTime() - startTime) / duration, 1)
+                let eased = Self.springEase(progress)
+
+                self.panel.setFrame(
+                    NSRect(
+                        x: startFrame.origin.x + (targetFrame.origin.x - startFrame.origin.x) * eased,
+                        y: startFrame.origin.y + (targetFrame.origin.y - startFrame.origin.y) * eased,
+                        width: startFrame.width + (targetFrame.width - startFrame.width) * eased,
+                        height: startFrame.height + (targetFrame.height - startFrame.height) * eased
+                    ),
+                    display: true
+                )
+
+                if progress >= 1 {
+                    timer.invalidate()
+                    self.sizeAnimation = nil
+                    self.panel.minSize = savedMin
+                    self.panel.maxSize = savedMax
+                    self.panel.setFrame(targetFrame, display: true)
+                }
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        sizeAnimation = timer
+    }
+
+    /// Damped oscillation: rises past 1 about a third of the way in, dips
+    /// slightly under, then settles — one clear bounce rather than a long
+    /// wobble, which on a whole window reads as lively instead of unsteady.
+    private static func springEase(_ t: Double) -> CGFloat {
+        guard t < 1 else { return 1 }
+        return CGFloat(1 - exp(-6 * t) * cos(9 * t))
+    }
+
     /// Decides by whichever axis was actually dragged this time (the one that
     /// moved further from where this specific drag started), using that
     /// axis's own midpoint. Width's span (120pt) and height's span (~230pt)
@@ -278,7 +390,11 @@ extension AppDelegate: NSWindowDelegate {
     /// reliably hold on a borderless, fullSizeContentView panel, so enforce
     /// the bounds directly on every live-resize callback.
     func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
-        NSSize(
+        // Only police sizes the user is dragging. The springy toggle
+        // deliberately overshoots the presets, and clamping here would flatten
+        // the bounce.
+        guard sender.inLiveResize else { return frameSize }
+        return NSSize(
             width: min(max(frameSize.width, smallSize.width), largeSize.width),
             height: min(max(frameSize.height, smallSize.height), largeSize.height)
         )
@@ -303,31 +419,23 @@ extension AppDelegate: NSWindowDelegate {
     /// those bypasses AppKit's own resize tracking (and so never fires
     /// windowWillStartLiveResize/windowDidEndLiveResize on their own).
     func snapToNearestPresetIfNeeded(draggedFrom start: CGSize) {
-        let current = panel.frame
-        let target = nearestPreset(to: current.size, draggedFrom: start)
-        guard target != current.size else { return }
+        let current = panel.frame.size
+        let target = nearestPreset(to: current, draggedFrom: start)
 
         // A vertical drag never asked the width to change, so growing it off
         // one side looks like the panel lunging sideways. Keep it centered on
         // where it already is instead. A horizontal drag keeps its left edge,
         // which is what dragging a side edge normally does.
-        let widthMoved = abs(current.size.width - start.width)
-        let heightMoved = abs(current.size.height - start.height)
-        var newX = heightMoved > widthMoved
-            ? current.midX - target.width / 2
-            : current.origin.x
+        let widthMoved = abs(current.width - start.width)
+        let heightMoved = abs(current.height - start.height)
 
-        if let visible = NSScreen.main?.visibleFrame {
-            newX = min(max(newX, visible.minX + 4), visible.maxX - target.width - 4)
-        }
+        animatePanel(to: target, keepingHorizontalCenter: heightMoved > widthMoved)
+    }
 
-        let topY = current.origin.y + current.size.height
-        let newOrigin = NSPoint(x: newX, y: topY - target.height)
-
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.18
-            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            panel.animator().setFrame(NSRect(origin: newOrigin, size: target), display: true)
-        }
+    /// The panel has no zoom button, and a double-click anywhere on it is our
+    /// own size toggle — don't also let the system's title-bar double-click
+    /// zoom fire on top of it.
+    func windowShouldZoom(_ window: NSWindow, toFrame newFrame: NSRect) -> Bool {
+        false
     }
 }

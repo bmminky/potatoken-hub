@@ -4,6 +4,8 @@ import AppKit
 /// installs edge/corner resize handling and drag-to-move) but made fully
 /// transparent and button-less, so it still looks like a plain floating card.
 final class FloatingPanel: NSWindow {
+    var onDoubleClick: (() -> Void)?
+
     init(contentViewController: NSViewController, size: NSSize) {
         super.init(
             contentRect: NSRect(origin: .zero, size: size),
@@ -29,4 +31,16 @@ final class FloatingPanel: NSWindow {
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    /// Observes double-clicks without consuming them: the event is still
+    /// forwarded, so background-dragging the window and clicking the SwiftUI
+    /// buttons keep behaving exactly as before.
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown,
+           event.clickCount == 2,
+           !(contentView?.hitTest(event.locationInWindow) is CornerResizeHandle) {
+            onDoubleClick?()
+        }
+        super.sendEvent(event)
+    }
 }
