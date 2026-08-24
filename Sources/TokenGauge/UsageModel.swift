@@ -7,7 +7,7 @@ final class UsageModel: ObservableObject {
     @Published private(set) var claude: ProviderSnapshot = .empty(.claude)
     @Published private(set) var codex: ProviderSnapshot = .empty(.codex)
     @Published private(set) var lastUpdated: Date?
-    @Published private(set) var menuBarText: String = "TG —"
+    @Published private(set) var menuBarSegments: [StatusItemBadge.Segment] = [.init(label: "TG", value: "—")]
 
     private var timer: Timer?
     private var lastClaudeMTime: Date?
@@ -36,21 +36,23 @@ final class UsageModel: ObservableObject {
         claude = newClaude
         codex = newCodex
         lastUpdated = Date()
-        menuBarText = computeMenuBarText()
+        menuBarSegments = computeMenuBarSegments()
 
         for w in claude.windows { AlertManager.shared.process(window: w) }
         for w in codex.windows { AlertManager.shared.process(window: w) }
     }
 
-    private func computeMenuBarText() -> String {
-        var parts: [String] = []
+    /// Kept as label/value pairs rather than one prebuilt string so the badge
+    /// can style the labels differently without having to parse them back out.
+    private func computeMenuBarSegments() -> [StatusItemBadge.Segment] {
+        var parts: [StatusItemBadge.Segment] = []
         if let r = mostConstrainedRemaining(claude) {
-            parts.append("Cl \(Int(r))%")
+            parts.append(.init(label: "Cl", value: "\(Int(r))%"))
         }
         if let r = mostConstrainedRemaining(codex) {
-            parts.append("Cx \(Int(r))%")
+            parts.append(.init(label: "Cx", value: "\(Int(r))%"))
         }
-        return parts.isEmpty ? "TG —" : parts.joined(separator: "  ")
+        return parts.isEmpty ? [.init(label: "TG", value: "—")] : parts
     }
 
     private func mostConstrainedRemaining(_ snapshot: ProviderSnapshot) -> Double? {

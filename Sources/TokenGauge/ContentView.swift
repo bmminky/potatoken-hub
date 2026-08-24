@@ -58,10 +58,6 @@ struct FullContent: View {
                     Text("데이터 없음")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                } else if snapshot.freshness == .stale {
-                    Text("오래됨")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
                 }
             }
             if snapshot.windows.isEmpty {

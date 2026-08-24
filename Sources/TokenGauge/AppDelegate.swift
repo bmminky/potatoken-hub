@@ -27,7 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.title = model.menuBarText
+            button.image = StatusItemBadge.image(for: model.menuBarSegments)
             button.target = self
             button.action = #selector(statusItemClicked(_:))
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -77,10 +77,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.onDoubleClick = { [weak self] in self?.toggleSizePreset() }
         addCornerResizeHandles()
 
-        model.$menuBarText
+        model.$menuBarSegments
             .receive(on: RunLoop.main)
-            .sink { [weak self] text in
-                self?.statusItem.button?.title = text
+            .sink { [weak self] segments in
+                self?.statusItem.button?.image = StatusItemBadge.image(for: segments)
             }
             .store(in: &cancellables)
     }
@@ -161,7 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func positionTopRight() {
-        guard let screen = NSScreen.main else { return }
+        guard let screen = statusItemScreen else { return }
         let visible = screen.visibleFrame
         let size = smallSize
         let margin: CGFloat = 16
@@ -197,7 +197,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         var x = buttonFrameInScreen.midX - panelSize.width / 2
         let y = buttonFrameInScreen.minY - panelSize.height - 4
 
-        if let visible = NSScreen.main?.visibleFrame {
+        if let visible = statusItemScreen?.visibleFrame {
             x = min(max(x, visible.minX + 4), visible.maxX - panelSize.width - 4)
         }
         panel.setFrameOrigin(NSPoint(x: x, y: y))
@@ -219,6 +219,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func isFrameOnScreen(_ frame: NSRect) -> Bool {
         NSScreen.screens.contains { $0.frame.intersects(frame) }
+    }
+
+    /// The display the panel is actually sitting on.
+    ///
+    /// Everything that keeps the panel on-screen has to measure against this,
+    /// never `NSScreen.main`: main is the menu-bar display, so clamping a
+    /// panel that lives on a second display to main's bounds drags it back
+    /// across to main every time it is resized.
+    private var panelScreen: NSScreen? {
+        panel.screen ?? statusItemScreen
+    }
+
+    /// The display showing the menu bar this app's status item is in.
+    private var statusItemScreen: NSScreen? {
+        statusItem.button?.window?.screen ?? NSScreen.main
     }
 
     /// Double-clicking the panel switches to the other preset.
@@ -245,7 +260,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ? current.midX - target.width / 2
             : current.origin.x
 
-        if let visible = NSScreen.main?.visibleFrame {
+        if let visible = panelScreen?.visibleFrame {
             newX = min(max(newX, visible.minX + 4), visible.maxX - target.width - 4)
         }
 
@@ -357,6 +372,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showContextMenu() {
         let menu = NSMenu()
 
+        let refreshItem = NSMenuItem(title: "새로고침", action: #selector(refreshNow), keyEquivalent: "")
+        refreshItem.target = self
+        menu.addItem(refreshItem)
+
+        menu.addItem(.separator())
+
         let loginItem = NSMenuItem(title: "로그인 시 자동 실행", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
         loginItem.target = self
         loginItem.state = LaunchAtLogin.isEnabled ? .on : .off
@@ -371,6 +392,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
         statusItem.menu = nil
+    }
+
+    @objc private func refreshNow() {
+        model.refresh()
     }
 
     @objc private func toggleLaunchAtLogin() {
