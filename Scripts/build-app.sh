@@ -28,6 +28,30 @@ mkdir -p "$APP_BUNDLE/Contents/Resources"
 BIN_PATH="$(swift build -c release --show-bin-path)"
 cp "$BIN_PATH/$PRODUCT_NAME" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 
+# Rebuild the icon from its source art whenever that art is newer, so the
+# .icns can't quietly fall behind the PNG it was made from.
+ICON_SOURCE="Resources/AppIcon-source.png"
+ICON_ICNS="Resources/AppIcon.icns"
+if [ -f "$ICON_SOURCE" ] && { [ ! -f "$ICON_ICNS" ] || [ "$ICON_SOURCE" -nt "$ICON_ICNS" ]; }; then
+    echo "Generating icon..."
+    ICONSET="$BUILD_DIR/AppIcon.iconset"
+    rm -rf "$ICONSET"
+    mkdir -p "$ICONSET"
+    for spec in "16 icon_16x16" "32 icon_16x16@2x" "32 icon_32x32" "64 icon_32x32@2x" \
+                "128 icon_128x128" "256 icon_128x128@2x" "256 icon_256x256" "512 icon_256x256@2x" \
+                "512 icon_512x512" "1024 icon_512x512@2x"; do
+        px="${spec% *}"
+        name="${spec#* }"
+        sips -s format png -z "$px" "$px" "$ICON_SOURCE" --out "$ICONSET/$name.png" >/dev/null
+    done
+    iconutil -c icns "$ICONSET" -o "$ICON_ICNS"
+    rm -rf "$ICONSET"
+fi
+
+if [ -f "$ICON_ICNS" ]; then
+    cp "$ICON_ICNS" "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
+fi
+
 cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -37,6 +61,8 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
     <string>$APP_NAME</string>
     <key>CFBundleIdentifier</key>
     <string>$BUNDLE_ID</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleName</key>
     <string>$APP_NAME</string>
     <key>CFBundleDisplayName</key>

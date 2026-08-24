@@ -12,21 +12,24 @@ struct GaugeRow: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(window.label)
-                    .font(.subheadline)
+                    .font(window.labelFont)
                 Spacer()
                 Text(remainingText)
                     .font(.subheadline.monospacedDigit())
                     .foregroundStyle(color)
                     .frame(minWidth: 40, alignment: .trailing)
             }
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.gray.opacity(0.2))
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(color)
-                    .scaleEffect(x: CGFloat((window.remainingPercent ?? 0) / 100), y: 1, anchor: .leading)
+            // Filled by real width rather than a horizontal scale, which would
+            // squash the rounded ends flat on a short bar.
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.gray.opacity(0.2))
+                    Capsule()
+                        .fill(color)
+                        .frame(width: geo.size.width * CGFloat((window.remainingPercent ?? 0) / 100))
+                }
             }
-            .frame(maxWidth: .infinity)
             .frame(height: 8)
             if let resetText {
                 Text(resetText)
@@ -44,6 +47,18 @@ struct GaugeRow: View {
     private var resetText: String? { ResetText.of(window) }
 }
 
+extension UsageWindow {
+    /// Windows shorter than a day are set semibold, longer ones regular, so
+    /// that where two sit side by side the short one reads as the distinct
+    /// entry. Keyed off the actual span rather than the label text, and
+    /// applied in both rows so Claude's and Codex's lines follow one rule.
+    var labelFont: Font {
+        windowMinutes < 24 * 60
+            ? Font.subheadline.weight(.semibold)
+            : Font.subheadline
+    }
+}
+
 /// When a window resets, phrased relative to now. Estimated times are marked
 /// with 약, since Claude's local history has no reset timestamp to read.
 enum ResetText {
@@ -53,7 +68,9 @@ enum ResetText {
         formatter.locale = Locale(identifier: "ko_KR")
         formatter.unitsStyle = .short
         let relative = formatter.localizedString(for: date, relativeTo: Date())
-        let prefix = window.resetKind == .estimated ? "약 " : ""
-        return "\(prefix)리셋 \(relative)"
+        // 약 qualifies the duration, not the reset itself, so it belongs next
+        // to the time: "리셋 약 1시간 후", not "약 리셋 1시간 후".
+        let approximately = window.resetKind == .estimated ? "약 " : ""
+        return "리셋 \(approximately)\(relative)"
     }
 }

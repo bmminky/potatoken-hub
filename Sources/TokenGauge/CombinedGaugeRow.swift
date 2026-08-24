@@ -18,27 +18,30 @@ struct CombinedGaugeRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
-                valueLabel(overlay, color: overlayColor)
+                valueLabel(overlay, color: overlayColor, labelColor: Color.primary)
                 Spacer(minLength: 8)
-                valueLabel(base, color: baseColor)
+                // The long window's name carries the accent too, tying it to
+                // the bar it names.
+                valueLabel(base, color: baseColor, labelColor: baseColor)
             }
 
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: trackHeight)
+            // Filled by real width, not by scaling a full-width capsule
+            // horizontally: scaling squashes the rounded caps along with the
+            // body, so a short bar ends up with flattened, angular ends.
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.gray.opacity(0.2))
 
-                Capsule()
-                    .fill(baseColor)
-                    .frame(height: trackHeight)
-                    .scaleEffect(x: fraction(base), y: 1, anchor: .leading)
+                    Capsule()
+                        .fill(baseColor)
+                        .frame(width: geo.size.width * fraction(base))
 
-                Capsule()
-                    .fill(overlayColor)
-                    .frame(height: trackHeight)
-                    .scaleEffect(x: fraction(overlay), y: 1, anchor: .leading)
+                    Capsule()
+                        .fill(overlayColor)
+                        .frame(width: geo.size.width * fraction(overlay))
+                }
             }
-            .frame(maxWidth: .infinity)
             .frame(height: trackHeight)
 
             HStack(spacing: 8) {
@@ -60,13 +63,13 @@ struct CombinedGaugeRow: View {
     }
 
     @ViewBuilder
-    private func valueLabel(_ window: UsageWindow, color: Color) -> some View {
+    private func valueLabel(_ window: UsageWindow, color: Color, labelColor: Color) -> some View {
         HStack(spacing: 4) {
-            // Same size and weight as GaugeRow's label, and the same primary
-            // color rather than a dimmed one, so Claude's windows and Codex's
-            // read as one list instead of two different treatments.
+            // Same size and weight as GaugeRow's label, so Claude's windows
+            // and Codex's read as one list instead of two treatments.
             Text(window.label)
-                .font(.subheadline)
+                .font(window.labelFont)
+                .foregroundStyle(labelColor)
             Text(window.remainingPercent.map { "\(Int($0))%" } ?? "—")
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(color)

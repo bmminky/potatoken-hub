@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables: Set<AnyCancellable> = []
     private var resizeStartSize: CGSize?
     private var sizeAnimation: Timer?
+    private var pendingSizeAnimation: (target: CGSize, minSize: NSSize, maxSize: NSSize)?
     private var appearanceObservation: NSKeyValueObservation?
 
     /// The 2 snap presets. Heights are measured from the real SwiftUI content
@@ -83,6 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.delegate = self
         panel.onDoubleClick = { [weak self] in self?.toggleSizePreset() }
         panel.onRightClick = { [weak self] event in self?.showPanelMenu(for: event) }
+        panel.onInteractionStart = { [weak self] in self?.finishSizeAnimation() }
         addCornerResizeHandles()
 
         model.$menuBarSegments
@@ -298,17 +300,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Ends a running size animation early and settles on its target size.
+    ///
+    /// The animation drives the frame on a timer, so anything else moving the
+    /// window at the same time — dragging it right after a double-click —
+    /// gets overwritten every tick and stutters. Any interaction cancels it
+    /// instead. The size still lands on the preset, since stopping mid-flight
+    /// would strand the panel at an in-between (or overshot) size; the origin
+    /// is left alone so the window doesn't jump out from under the cursor.
+    private func finishSizeAnimation() {
+        guard let animation = sizeAnimation else { return }
+        animation.invalidate()
+        sizeAnimation = nil
+
+        guard let pending = pendingSizeAnimation else { return }
+        pendingSizeAnimation = nil
+        panel.minSize = pending.minSize
+        panel.maxSize = pending.maxSize
+
+        let current = panel.frame
+        panel.setFrame(
+            NSRect(
+                x: current.origin.x,
+                y: current.maxY - pending.target.height,
+                width: pending.target.width,
+                height: pending.target.height
+            ),
+            display: true
+        )
+    }
+
     /// Drives the frame frame-by-frame instead of handing it to
     /// NSAnimationContext, because the bounce needs to briefly pass *beyond*
     /// the target size and NSWindow silently constrains any frame it is given
     /// — animated or not — to minSize/maxSize. Those limits are widened for
     /// the duration and restored at the end.
     private func springResize(to targetFrame: NSRect) {
-        sizeAnimation?.invalidate()
+        finishSizeAnimation()
 
         let startFrame = panel.frame
         let savedMin = panel.minSize
         let savedMax = panel.maxSize
+        pendingSizeAnimation = (target: targetFrame.size, minSize: savedMin, maxSize: savedMax)
         let slack: CGFloat = 90
         panel.minSize = NSSize(
             width: max(min(startFrame.width, targetFrame.width) - slack, 1),
@@ -345,6 +378,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 if progress >= 1 {
                     timer.invalidate()
                     self.sizeAnimation = nil
+                    self.pendingSizeAnimation = nil
                     self.panel.minSize = savedMin
                     self.panel.maxSize = savedMax
                     self.panel.setFrame(targetFrame, display: true)

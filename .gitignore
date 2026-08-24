@@ -2,3 +2,6 @@
 .swiftpm/
 *.xcodeproj
 .DS_Store
+
+# Generated from Resources/AppIcon-source.png by Scripts/build-app.sh
+Resources/AppIcon.icns

@@ -6,6 +6,9 @@ import AppKit
 final class FloatingPanel: NSWindow {
     var onDoubleClick: (() -> Void)?
     var onRightClick: ((NSEvent) -> Void)?
+    /// Fired the moment the user touches the panel, before anything else acts
+    /// on the event, so an in-flight animation can get out of the way.
+    var onInteractionStart: (() -> Void)?
 
     init(contentViewController: NSViewController, size: NSSize) {
         super.init(
@@ -37,6 +40,10 @@ final class FloatingPanel: NSWindow {
     /// forwarded, so background-dragging the window and clicking the SwiftUI
     /// buttons keep behaving exactly as before.
     override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown {
+            onInteractionStart?()
+        }
+
         if event.type == .leftMouseDown,
            event.clickCount == 2,
            !(contentView?.hitTest(event.locationInWindow) is CornerResizeHandle) {

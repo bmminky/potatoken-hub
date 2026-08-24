@@ -174,14 +174,17 @@ private struct MiniUsageBar: View {
     let color: Color
 
     var body: some View {
-        ZStack(alignment: .leading) {
-            Capsule()
-                .fill(Color.gray.opacity(0.2))
-            Capsule()
-                .fill(color)
-                .scaleEffect(x: CGFloat(remainingPercent / 100), y: 1, anchor: .leading)
+        // Filled by real width rather than a horizontal scale, which would
+        // squash the rounded ends flat on a short bar.
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.gray.opacity(0.2))
+                Capsule()
+                    .fill(color)
+                    .frame(width: geo.size.width * CGFloat(remainingPercent / 100))
+            }
         }
-        .frame(maxWidth: .infinity)
         .frame(height: 5)
     }
 }

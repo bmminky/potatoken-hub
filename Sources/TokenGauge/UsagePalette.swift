@@ -33,8 +33,11 @@ enum UsagePalette {
     // Caution and low are fixed values so they read identically everywhere.
     // Plenty is not: on the panel it's white against dark material, but in the
     // menu bar it has to follow the menu bar, so each caller supplies its own.
-    private static let cautionRGB = (red: 0.96, green: 0.86, blue: 0.55) // pastel yellow
-    private static let lowRGB = (red: 0.95, green: 0.27, blue: 0.22)
+    private static let cautionRGB = (red: 0.96, green: 0.86, blue: 0.55) // pastel yellow #F5DB8C
+    // Muted to sit in the same family as the yellow and the Claude orange,
+    // but kept saturated enough to still read as a warning — going any deeper
+    // makes it hard to pick out from the orange bar it sits on top of.
+    private static let lowRGB = (red: 0.867, green: 0.310, blue: 0.271) // #DD4F45
 
     /// - Parameter plenty: the color to use when there's plenty left.
     static func color(remaining: Double?, plenty: Color) -> Color {
