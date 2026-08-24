@@ -15,6 +15,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- UseWindowsForms adds these globally, which makes Color, Size, Panel and
+         HorizontalAlignment ambiguous against their WPF namesakes in every file.
+         The two files that need WinForms/GDI import them explicitly instead. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="Resources\AppIcon.ico" Condition="Exists('Resources\AppIcon.ico')" />
     <Resource Include="Resources\AppIcon.ico" Condition="Exists('Resources\AppIcon.ico')" />
   </ItemGroup>
