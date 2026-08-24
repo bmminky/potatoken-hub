@@ -2,14 +2,21 @@
 # Packages the already-built app into a drag-to-install DMG.
 # Run Scripts/build-app.sh first (or Scripts/release.sh, which builds too).
 #
-# Usage: Scripts/make-dmg.sh
+# Usage: Scripts/make-dmg.sh <version, e.g. 1.5.0>
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+VERSION="${1:-}"
+if [ -z "$VERSION" ]; then
+    echo "Usage: Scripts/make-dmg.sh <version, e.g. 1.5.0>"
+    exit 1
+fi
 
 APP_NAME="potatoken hub"
 APP_BUNDLE=".build/$APP_NAME.app"
 DIST_DIR="dist"
-DMG_PATH="$DIST_DIR/$APP_NAME.dmg"
+# No spaces — GitHub Release assets mangle them (spaces become dots).
+DMG_PATH="$DIST_DIR/potatoken-hub-$VERSION-macOS-arm64.dmg"
 STAGING="$DIST_DIR/dmg-staging"
 
 if [ ! -d "$APP_BUNDLE" ]; then

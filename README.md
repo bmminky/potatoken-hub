@@ -17,6 +17,17 @@ Claude와 Codex의 남은 사용량을 macOS 메뉴바에서 보여주는 로컬
 Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계정, 분석 도구, 제공자 API 키가 없고
 네트워크 통신도 하지 않습니다.
 
+### 다운로드
+
+[최신 릴리즈](https://github.com/bmminky/potatoken-hub/releases/latest)에서 DMG 또는 ZIP을 받으세요. Apple Silicon(`arm64`) 전용입니다.
+
+1. DMG를 열고 `potatoken hub.app`을 Applications 폴더로 드래그하거나, ZIP을 풀어서 옮깁니다.
+2. 처음 실행할 때 Finder에서 `potatoken hub.app`을 **우클릭 → 열기**로 실행하세요.
+3. 그래도 막히면 시스템 설정 → 개인정보 보호 및 보안에서, 이 저장소에서 받은 파일이 맞는지 확인한 뒤 "확인 없이 열기"를 선택하세요.
+4. 메뉴바에서 potatoken hub 게이지를 찾으세요 — Dock 아이콘은 의도적으로 없습니다.
+
+서명 안내: 이 빌드는 애드혹 서명이며 Apple 공증을 받지 않았습니다(Developer ID 인증서가 없는 개인 프로젝트라서입니다). 그래서 처음 실행 시 Gatekeeper 경고가 뜹니다. Gatekeeper 우회를 원하지 않으면 아래 "빌드" 항목대로 소스에서 직접 빌드하세요.
+
 ### 기능
 
 - **메뉴바 표시** — 각 제공자의 가장 빠듯한 남은 비율을 `Cl 74%  Cx 55%` 형태로 표시
@@ -90,6 +101,17 @@ A local-only macOS menu bar app that shows your remaining Claude and Codex
 usage. It only reads usage records already stored on your Mac — no accounts,
 no analytics, no provider API keys, no network calls.
 
+### Download
+
+Get the DMG or ZIP from the [latest release](https://github.com/bmminky/potatoken-hub/releases/latest). Apple Silicon (`arm64`) only.
+
+1. Open the DMG and drag `potatoken hub.app` into Applications, or unzip and move it there.
+2. On first launch, **right-click `potatoken hub.app` in Finder and choose Open**.
+3. If macOS still blocks it, go to System Settings → Privacy & Security and choose "Open Anyway" only after confirming you got it from this repository.
+4. Look for the potatoken hub gauge in the menu bar — there's no Dock icon by design.
+
+Signing notice: this build is ad-hoc signed and not notarized by Apple (a personal project without a Developer ID certificate), so Gatekeeper will warn on first launch. If you'd rather not override Gatekeeper, build from source using the instructions below.
+
 ### Features
 
 - **Menu bar readout** — each provider's tightest remaining percentage, shown as `Cl 74%  Cx 55%`
@@ -159,6 +181,17 @@ An independent personal project, unaffiliated with OpenAI or Anthropic.
 
 Mac にすでに保存されているローカルの使用量記録だけを読み取るローカル専用アプリです。
 アカウント、分析ツール、プロバイダーの API キーはなく、ネットワーク通信も行いません。
+
+### ダウンロード
+
+[最新リリース](https://github.com/bmminky/potatoken-hub/releases/latest)から DMG または ZIP を入手してください。Apple Silicon(`arm64`)専用です。
+
+1. DMG を開いて `potatoken hub.app` を Applications フォルダにドラッグするか、ZIP を展開して移動します。
+2. 初回起動時は Finder で `potatoken hub.app` を**右クリック → 開く**で起動してください。
+3. それでもブロックされる場合は、システム設定 → プライバシーとセキュリティで、このリポジトリから入手したことを確認したうえで「このまま開く」を選択してください。
+4. メニューバーで potatoken hub のゲージを探してください — Dock アイコンは意図的にありません。
+
+署名について: このビルドはアドホック署名のみで、Apple の公証は受けていません(Developer ID 証明書のない個人プロジェクトのため)。そのため初回起動時に Gatekeeper の警告が出ます。Gatekeeper を回避したくない場合は、下記の手順でソースからビルドしてください。
 
 ### 機能
 
@@ -231,6 +264,17 @@ OpenAI、Anthropic とは無関係の個人プロジェクトです。
 
 只读取 Mac 上已经保存的本地使用量记录的本地专用应用。没有账户、没有分析工具、没有
 服务商 API 密钥,也不进行任何网络通信。
+
+### 下载
+
+从[最新版本](https://github.com/bmminky/potatoken-hub/releases/latest)获取 DMG 或 ZIP。仅支持 Apple Silicon(`arm64`)。
+
+1. 打开 DMG,将 `potatoken hub.app` 拖入 Applications 文件夹;或解压 ZIP 后手动移动过去。
+2. 首次启动时,在 Finder 中**右键点击 `potatoken hub.app` → 打开**。
+3. 如果 macOS 仍然阻止运行,请前往系统设置 → 隐私与安全性,在确认文件确实来自本仓库后选择"仍要打开"。
+4. 在菜单栏中寻找 potatoken hub 的进度图标 —— 该应用刻意不提供 Dock 图标。
+
+签名说明:该构建仅进行了临时签名(ad-hoc),未经 Apple 公证(个人项目,没有 Developer ID 证书),因此首次启动时会出现 Gatekeeper 警告。如果不想绕过 Gatekeeper,可按下方说明自行从源码构建。
 
 ### 功能
 
