@@ -16,6 +16,31 @@ public partial class PanelWindow : Window
 
     private readonly UsageModel _model;
 
+    private enum SizePreset
+    {
+        Small,
+        Large,
+    }
+
+    /// <summary>
+    /// Which preset the user last chose. Held as state rather than read back off
+    /// the window, because the point of tracking it is to recover when something
+    /// else has already changed the size — inferring it from a size that's wrong
+    /// just ratifies the wrong size.
+    /// </summary>
+    private SizePreset _activePreset = SizePreset.Small;
+
+    /// <summary>Raised while the app is deliberately resizing.</summary>
+    private bool _isPerformingOwnResize;
+
+    /// <summary>Where the window sat at the previous mouse-down.</summary>
+    private Point? _positionAtLastMouseDown;
+
+    private Size SizeOf(SizePreset preset) => preset == SizePreset.Large ? LargeSize : SmallSize;
+
+    private SizePreset PresetNearest(double width) =>
+        width >= (SmallSize.Width + LargeSize.Width) / 2 ? SizePreset.Large : SizePreset.Small;
+
     public event Action? RightClicked;
 
     public PanelWindow(UsageModel model)
@@ -31,6 +56,12 @@ public partial class PanelWindow : Window
             Width = size.Width;
             Height = size.Height;
         }
+        // A frame saved by an older build is the one place with no recorded
+        // intent to consult, so snap it to whichever preset it's nearest.
+        _activePreset = PresetNearest(Width);
+        var preset = SizeOf(_activePreset);
+        Width = preset.Width;
+        Height = preset.Height;
 
         Topmost = Settings.AlwaysOnTop;
         SourceInitialized += (_, _) => RestorePosition();
@@ -65,11 +96,19 @@ public partial class PanelWindow : Window
 
     private void OnLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ClickCount == 2)
+        var previousPosition = _positionAtLastMouseDown;
+        _positionAtLastMouseDown = new Point(Left, Top);
+
+        // Dragging a window a long way is done in short grab-pull-release
+        // strokes, and two grabs inside the double-click interval arrive as
+        // ClickCount 2 — which resized the panel mid-drag. A real double-click
+        // leaves the window where it was between the two clicks.
+        if (e.ClickCount == 2 && !MovedSince(previousPosition))
         {
             ToggleSizePreset();
             return;
         }
+
         // Drag anywhere on the card, since the window has no title bar. The
         // resize grip handles its own hit-testing before this runs.
         try { DragMove(); }
@@ -78,8 +117,40 @@ public partial class PanelWindow : Window
 
     public void ToggleSizePreset()
     {
-        var toLarge = Math.Abs(Width - LargeSize.Width) > Math.Abs(Width - SmallSize.Width);
-        AnimateTo(toLarge ? LargeSize : SmallSize);
+        var showing = Math.Abs(Width - SizeOf(_activePreset).Width) < 0.5
+            ? _activePreset
+            : PresetNearest(Width);
+        _activePreset = showing == SizePreset.Large ? SizePreset.Small : SizePreset.Large;
+        AnimateTo(SizeOf(_activePreset));
+    }
+
+    private bool MovedSince(Point? previous)
+    {
+        if (previous is not { } p) return false;
+        const double tolerance = 2;
+        return Math.Abs(Left - p.X) > tolerance || Math.Abs(Top - p.Y) > tolerance;
+    }
+
+    /// <summary>
+    /// Puts the panel back on its preset if a DPI change resized it.
+    /// Its size is chosen by the user's double-click, not by which display it
+    /// happens to be on.
+    /// </summary>
+    private void RestorePresetSizeIfDrifted()
+    {
+        if (_isPerformingOwnResize) return;
+
+        var target = SizeOf(_activePreset);
+        if (Math.Abs(Width - target.Width) < 0.5 && Math.Abs(Height - target.Height) < 0.5) return;
+
+        Width = target.Width;
+        Height = target.Height;
+    }
+
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        RestorePresetSizeIfDrifted();
     }
 
     /// <summary>
@@ -91,7 +162,11 @@ public partial class PanelWindow : Window
         var ease = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 };
         var duration = new Duration(TimeSpan.FromMilliseconds(340));
 
-        BeginAnimation(WidthProperty, new DoubleAnimation(target.Width, duration) { EasingFunction = ease });
+        _isPerformingOwnResize = true;
+        var widthAnimation = new DoubleAnimation(target.Width, duration) { EasingFunction = ease };
+        widthAnimation.Completed += (_, _) => _isPerformingOwnResize = false;
+
+        BeginAnimation(WidthProperty, widthAnimation);
         BeginAnimation(HeightProperty, new DoubleAnimation(target.Height, duration) { EasingFunction = ease });
     }
 
