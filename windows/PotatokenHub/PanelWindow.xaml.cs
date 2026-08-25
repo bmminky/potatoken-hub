@@ -9,8 +9,10 @@ namespace PotatokenHub;
 
 public partial class PanelWindow : Window
 {
-    private static readonly Size SmallSize = new(220, 96);
-    private static readonly Size LargeSize = new(320, 210);
+    // Includes 16pt transparent shadow space on every edge. Card itself stays
+    // exactly 220x96 or 320x210; only the transparent window bounds grow.
+    private static readonly Size SmallSize = new(252, 128);
+    private static readonly Size LargeSize = new(352, 242);
     /// <summary>How far below the large preset still renders the large layout.</summary>
     private const double LargeTolerance = 24;
 

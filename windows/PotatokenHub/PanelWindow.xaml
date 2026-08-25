@@ -12,10 +12,15 @@
         Width="300" Height="250">
 
     <Border x:Name="Card"
+            Margin="16"
             CornerRadius="10"
             Background="#E61E1E20"
             BorderBrush="#33FFFFFF"
             BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.5" Color="Black" />
+        </Border.Effect>
+
         <Grid>
             <!-- Large tier: per-window gauges, reset times, footer. -->
             <StackPanel x:Name="LargeView" Margin="16,16,16,14" Visibility="Collapsed">
