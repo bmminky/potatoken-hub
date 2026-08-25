@@ -111,7 +111,7 @@ struct NestedUsageBar: View {
 
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.gray.opacity(0.2))
+                    .fill(Color.gray.opacity(0.32))
 
                 // Longer bar first so the shorter one lands on top of it and
                 // neither can be swallowed: whichever window is tighter is the
