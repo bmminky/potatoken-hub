@@ -10,7 +10,7 @@ namespace PotatokenHub;
 public partial class PanelWindow : Window
 {
     private static readonly Size SmallSize = new(220, 96);
-    private static readonly Size LargeSize = new(320, 268);
+    private static readonly Size LargeSize = new(320, 210);
     /// <summary>How far below the large preset still renders the large layout.</summary>
     private const double LargeTolerance = 24;
 
@@ -440,60 +440,22 @@ public partial class PanelWindow : Window
     }
 
     /// <summary>
-    /// Both windows measured against the full track and drawn from the same
-    /// edge, the one with more remaining underneath — so whichever window is
-    /// tighter always stays visible rather than being covered.
+    /// Both windows are drawn directly in one control, measured against the
+    /// full track and starting at the same edge. This avoids relying on a
+    /// post-layout SizeChanged event, which could leave stale widths after a
+    /// DPI or visibility change.
     /// </summary>
     private static UIElement NestedBar(UsageWindow baseWindow, UsageWindow overlay, Color accent, double height = 8)
     {
-        var track = new Border
+        return new NestedGaugeBar(
+            baseWindow.RemainingPercent,
+            overlay.RemainingPercent,
+            accent,
+            UsagePalette.ColorFor(overlay.RemainingPercent, Colors.White),
+            height)
         {
-            Height = height,
-            CornerRadius = new CornerRadius(height / 2),
-            Background = new SolidColorBrush(Color.FromArgb(0x33, 0x99, 0x99, 0x99)),
             Margin = new Thickness(0, 2, 0, 0),
         };
-
-        var grid = new Grid();
-        var baseFraction = (baseWindow.RemainingPercent ?? 0) / 100.0;
-        var overlayFraction = (overlay.RemainingPercent ?? 0) / 100.0;
-
-        var baseBar = new Border
-        {
-            CornerRadius = new CornerRadius(height / 2),
-            Background = new SolidColorBrush(accent),
-            HorizontalAlignment = HorizontalAlignment.Left,
-        };
-        var overlayBar = new Border
-        {
-            CornerRadius = new CornerRadius(height / 2),
-            Background = new SolidColorBrush(UsagePalette.ColorFor(overlay.RemainingPercent, Colors.White)),
-            HorizontalAlignment = HorizontalAlignment.Left,
-        };
-
-        // Later children draw on top, so the longer bar goes in first.
-        if (baseFraction >= overlayFraction)
-        {
-            grid.Children.Add(baseBar);
-            grid.Children.Add(overlayBar);
-        }
-        else
-        {
-            grid.Children.Add(overlayBar);
-            grid.Children.Add(baseBar);
-        }
-        track.Child = grid;
-
-        // Widths are fractions of the measured track, set on layout rather than
-        // via a scale transform, which would squash the rounded caps flat.
-        grid.SizeChanged += (_, e) =>
-        {
-            var full = e.NewSize.Width;
-            baseBar.Width = full * baseFraction;
-            overlayBar.Width = full * overlayFraction;
-        };
-
-        return track;
     }
 
     private static UIElement SimpleBar(double? remaining, double height)
@@ -533,4 +495,56 @@ public partial class PanelWindow : Window
 
     private static string Percent(UsageWindow window) =>
         window.RemainingPercent is { } r ? $"{(int)r}%" : "—";
+}
+
+/// <summary>
+/// Draws the weekly and short-window fills in the same coordinate system.
+/// The longer fill is painted first and the shorter fill second, matching the
+/// macOS NestedUsageBar even when the weekly allowance is the tighter one.
+/// </summary>
+internal sealed class NestedGaugeBar : FrameworkElement
+{
+    private readonly double _baseFraction;
+    private readonly double _overlayFraction;
+    private readonly Brush _baseBrush;
+    private readonly Brush _overlayBrush;
+    private static readonly Brush TrackBrush =
+        new SolidColorBrush(Color.FromArgb(0x33, 0x99, 0x99, 0x99));
+
+    public NestedGaugeBar(double? baseRemaining, double? overlayRemaining, Color baseColor, Color overlayColor, double height)
+    {
+        _baseFraction = Fraction(baseRemaining);
+        _overlayFraction = Fraction(overlayRemaining);
+        _baseBrush = new SolidColorBrush(baseColor);
+        _overlayBrush = new SolidColorBrush(overlayColor);
+        Height = height;
+        SnapsToDevicePixels = true;
+    }
+
+    protected override void OnRender(DrawingContext drawingContext)
+    {
+        base.OnRender(drawingContext);
+        var radius = ActualHeight / 2;
+        DrawFill(drawingContext, TrackBrush, ActualWidth, radius);
+
+        if (_baseFraction >= _overlayFraction)
+        {
+            DrawFill(drawingContext, _baseBrush, ActualWidth * _baseFraction, radius);
+            DrawFill(drawingContext, _overlayBrush, ActualWidth * _overlayFraction, radius);
+        }
+        else
+        {
+            DrawFill(drawingContext, _overlayBrush, ActualWidth * _overlayFraction, radius);
+            DrawFill(drawingContext, _baseBrush, ActualWidth * _baseFraction, radius);
+        }
+    }
+
+    private void DrawFill(DrawingContext context, Brush brush, double width, double radius)
+    {
+        if (width <= 0 || ActualHeight <= 0) return;
+        context.DrawRoundedRectangle(brush, null, new Rect(0, 0, width, ActualHeight), radius, radius);
+    }
+
+    private static double Fraction(double? remaining) =>
+        Math.Clamp((remaining ?? 0) / 100.0, 0, 1);
 }

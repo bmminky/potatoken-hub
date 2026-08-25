@@ -1,9 +1,7 @@
 namespace PotatokenHub.Core;
 
 /// <summary>
-/// When a window resets, phrased relative to now. Estimated times carry an
-/// "approximately" qualifier, since Claude's local history has no reset
-/// timestamp to read.
+/// When a window resets, phrased relative to now.
 /// </summary>
 public static class ResetText
 {
@@ -12,19 +10,12 @@ public static class ResetText
         if (window.ResetDate is not { } date) return null;
         var now = nowOverride ?? DateTime.Now;
         var relative = Relative(date - now);
-        // Only short windows carry the qualifier. Over a week the estimate's
-        // error is small next to the span, so it's noise rather than useful
-        // precision.
-        var estimated = window.ResetKind == ResetKind.Estimated && window.WindowMinutes < 24 * 60;
-
         return L.Resolved switch
         {
-            // 약 qualifies the duration, not the reset itself, so it belongs next
-            // to the time: "리셋 약 1시간 후", not "약 리셋 1시간 후".
-            L.Language.Korean => $"리셋 {(estimated ? "약 " : "")}{relative}",
-            L.Language.Japanese => $"リセット {(estimated ? "約" : "")}{relative}",
-            L.Language.Chinese => $"重置 {(estimated ? "大约" : "")}{relative}",
-            _ => $"Resets {relative}{(estimated ? " (est.)" : "")}",
+            L.Language.Korean => $"리셋 {relative}",
+            L.Language.Japanese => $"リセット {relative}",
+            L.Language.Chinese => $"重置 {relative}",
+            _ => $"Resets {relative}",
         };
     }
 
