@@ -121,6 +121,10 @@ private struct CompactRow: View {
                 // dropping the word leaves the width to the gauge. Smaller
                 // than the large view's mark so it doesn't crowd the bar.
                 ProviderMark(provider: snapshot.provider, size: 10)
+                    // The Codex symbol has a wider natural width than the
+                    // Claude burst. Give both marks the same layout slot so
+                    // the five-hour percentages begin at the exact same x.
+                    .frame(width: 14, alignment: .leading)
                     // Nudged in from the panel's own edge padding, which is
                     // tight at this size and left the mark looking stuck to
                     // the side. Everything up to the spacer shifts with it.
