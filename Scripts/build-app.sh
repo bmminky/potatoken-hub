@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 PRODUCT_NAME="TokenGauge"
 APP_NAME="potatoken hub"
 VERSION="1.10.0"
-BUILD_NUMBER="11"
+BUILD_NUMBER="12"
 
 # Deliberately unchanged across the rename. A bundle identifier is the app's
 # stable identity, and repointing it would strand the preferences (saved panel
