@@ -57,7 +57,7 @@ struct FullContent: View {
                 CombinedGaugeRow(
                     base: base,
                     overlay: overlay,
-                    baseColor: provider.accentColor,
+                    baseColor: weeklyGaugeColor(for: provider),
                     sourceExists: snapshot.sourceExists
                 )
             } else if snapshot.windows.isEmpty {
@@ -155,7 +155,7 @@ private struct CompactRow: View {
                 NestedUsageBar(
                     base: paired.base,
                     overlay: paired.overlay,
-                    baseColor: snapshot.provider.accentColor,
+                    baseColor: weeklyGaugeColor(for: snapshot.provider),
                     overlayColor: UsagePalette.color(remaining: paired.overlay.remainingPercent, plenty: .white),
                     height: 5
                 )
@@ -232,6 +232,14 @@ private struct MiniUsageBar: View {
 
 private func usageBarColor(for remaining: Double) -> Color {
     UsagePalette.color(remaining: remaining, plenty: .white)
+}
+
+/// Codex's weekly fill is darker than its text accent, keeping the white
+/// five-hour fill distinct where both occupy nearly the same width.
+private func weeklyGaugeColor(for provider: Provider) -> Color {
+    provider == .codex
+        ? Color(red: 0x86 / 255, green: 0x86 / 255, blue: 0x90 / 255)
+        : provider.accentColor
 }
 
 /// The long and short window of a two-window provider, longest first. Picked
