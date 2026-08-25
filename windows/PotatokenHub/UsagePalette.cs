@@ -42,6 +42,9 @@ public static class UsagePalette
     // Claude's fixed orange; Codex's neutral gray, picked for a dark tray/panel.
     public static readonly Color ClaudeAccent = Color.FromRgb(0xD9, 0x77, 0x57);
     public static readonly Color CodexAccent = Color.FromRgb(0xBD, 0xBD, 0xC4);
+    // A deeper neutral used only for Codex's weekly fill, so the white
+    // five-hour fill remains immediately distinguishable where they overlap.
+    public static readonly Color CodexWeeklyGauge = Color.FromRgb(0x86, 0x86, 0x90);
 
     public static Color AccentFor(Core.Provider provider) =>
         provider == Core.Provider.Claude ? ClaudeAccent : CodexAccent;

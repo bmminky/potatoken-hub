@@ -447,10 +447,13 @@ public partial class PanelWindow : Window
     /// </summary>
     private static UIElement NestedBar(UsageWindow baseWindow, UsageWindow overlay, Color accent, double height = 8)
     {
+        var baseColor = baseWindow.Provider == Provider.Codex
+            ? UsagePalette.CodexWeeklyGauge
+            : accent;
         return new NestedGaugeBar(
             baseWindow.RemainingPercent,
             overlay.RemainingPercent,
-            accent,
+            baseColor,
             UsagePalette.ColorFor(overlay.RemainingPercent, Colors.White),
             height)
         {
