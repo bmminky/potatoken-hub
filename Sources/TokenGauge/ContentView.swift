@@ -166,25 +166,23 @@ private struct FooterView: View {
     @ObservedObject var model: UsageModel
     let onHide: () -> Void
 
+    private static let updateTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
+
     var body: some View {
         HStack(spacing: 10) {
             if let lastUpdated = model.lastUpdated {
-                // Text's Date-with-style interpolation only works with a
-                // literal string passed directly to the initializer, so the
-                // two languages need separate Text calls rather than one
-                // built from a runtime-composed String.
-                Group {
-                    switch L.resolved {
-                    case .korean:
-                        Text("업데이트 \(lastUpdated, style: .time)")
-                    case .japanese:
-                        Text("更新 \(lastUpdated, style: .time)")
-                    case .chinese:
-                        Text("更新于 \(lastUpdated, style: .time)")
-                    case .english, .system:
-                        Text("Updated \(lastUpdated, style: .time)")
-                    }
-                }
+                let time = Self.updateTimeFormatter.string(from: lastUpdated)
+                Text(L.t(
+                    ko: "업데이트 \(time)",
+                    en: "Updated \(time)",
+                    ja: "更新 \(time)",
+                    zh: "更新于 \(time)"
+                ))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

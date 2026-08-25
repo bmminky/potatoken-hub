@@ -10,6 +10,10 @@ struct GaugeRow: View {
         UsagePalette.color(remaining: window.remainingPercent, plenty: .white)
     }
 
+    private var trackColor: Color {
+        window.provider == .codex ? Color.gray.opacity(0.32) : Color.gray.opacity(0.2)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             // Name and value together at the trailing edge, reading the same
@@ -31,7 +35,7 @@ struct GaugeRow: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.gray.opacity(0.2))
+                        .fill(trackColor)
                     Capsule()
                         .fill(color)
                         .frame(width: geo.size.width * CGFloat((window.remainingPercent ?? 0) / 100))
