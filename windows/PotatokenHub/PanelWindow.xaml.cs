@@ -200,10 +200,10 @@ public partial class PanelWindow : Window
             // language on a Korean region was printing "Updated 오전 12:44".
             UpdatedText.Text = _model.LastUpdated is { } updated
                 ? L.T(
-                    ko: $"업데이트 {updated.ToString("t", L.FormattingCulture)}",
-                    en: $"Updated {updated.ToString("t", L.FormattingCulture)}",
-                    ja: $"更新 {updated.ToString("t", L.FormattingCulture)}",
-                    zh: $"更新于 {updated.ToString("t", L.FormattingCulture)}")
+                    ko: $"업데이트 {updated:HH:mm:ss}",
+                    en: $"Updated {updated:HH:mm:ss}",
+                    ja: $"更新 {updated:HH:mm:ss}",
+                    zh: $"更新于 {updated:HH:mm:ss}")
                 : "";
         }
         else

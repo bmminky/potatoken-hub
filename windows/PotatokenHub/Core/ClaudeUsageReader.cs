@@ -83,7 +83,7 @@ public static class ClaudeUsageReader
         try
         {
             mtime = File.GetLastWriteTime(path);
-            var file = JsonSerializer.Deserialize<HistoryFile>(File.ReadAllText(path));
+            var file = JsonSerializer.Deserialize<HistoryFile>(ReadAllTextShared(path));
             samples = file?.Samples ?? new List<Sample>();
         }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
@@ -130,5 +130,14 @@ public static class ClaudeUsageReader
         };
 
         return new ProviderSnapshot(Provider.Claude, windows, true, mtime, freshness);
+    }
+
+    private static string ReadAllTextShared(string path)
+    {
+        using var stream = new FileStream(
+            path, FileMode.Open, FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 }

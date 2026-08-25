@@ -104,7 +104,7 @@ public static class CodexUsageReader
             string[] lines;
             try
             {
-                lines = File.ReadAllLines(candidate.FullName);
+                lines = ReadAllLinesShared(candidate.FullName);
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
@@ -137,6 +137,22 @@ public static class CodexUsageReader
         }
 
         return new ProviderSnapshot(Provider.Codex, Array.Empty<UsageWindow>(), true, files[0].LastWriteTime, Freshness.Stale);
+    }
+
+    /// <summary>
+    /// Codex may append to the JSONL while a manual refresh is running. Open
+    /// it with read/write/delete sharing so that refresh does not silently
+    /// skip the current session merely because the writer has it open.
+    /// </summary>
+    private static string[] ReadAllLinesShared(string path)
+    {
+        using var stream = new FileStream(
+            path, FileMode.Open, FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream);
+        var lines = new List<string>();
+        while (reader.ReadLine() is { } line) lines.Add(line);
+        return lines.ToArray();
     }
 
     private static UsageWindow MakeWindow(RateLimitWindow window)
