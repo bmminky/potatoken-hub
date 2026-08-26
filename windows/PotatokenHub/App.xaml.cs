@@ -62,8 +62,8 @@ public partial class App : Application
     {
         var previous = _currentIcon;
         _currentIcon = TrayBadge.Render(
-            UsageModel.Tightest(_model.Claude),
-            UsageModel.Tightest(_model.Codex));
+            UsageModel.ShortestWindowRemaining(_model.Claude),
+            UsageModel.ShortestWindowRemaining(_model.Codex));
         _tray.Icon = _currentIcon;
         // Only safe to dispose after the control has taken the new one.
         previous?.Dispose();

@@ -77,7 +77,7 @@ public static class TrayBadge
         static string Part(ProviderSnapshot snapshot)
         {
             var name = snapshot.Provider.DisplayName();
-            var value = UsageModel.Tightest(snapshot);
+            var value = UsageModel.ShortestWindowRemaining(snapshot);
             return value is { } v ? $"{name} {(int)v}%" : $"{name} —";
         }
 

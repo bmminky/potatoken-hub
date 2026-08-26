@@ -34,12 +34,14 @@ public sealed class UsageModel : INotifyPropertyChanged
         Notify(nameof(LastUpdated));
     }
 
-    /// <summary>The tightest remaining percentage a provider reports, or null.</summary>
-    public static double? Tightest(ProviderSnapshot snapshot) => snapshot.Windows
-        .Select(w => w.RemainingPercent)
-        .Where(r => r is not null)
-        .DefaultIfEmpty(null)
-        .Min();
+    /// <summary>
+    /// Remaining percentage for the shortest reported window, normally the
+    /// five-hour allowance. Used only by the tray icon and tooltip.
+    /// </summary>
+    public static double? ShortestWindowRemaining(ProviderSnapshot snapshot) => snapshot.Windows
+        .Where(w => w.RemainingPercent is not null)
+        .OrderBy(w => w.WindowMinutes)
+        .FirstOrDefault()?.RemainingPercent;
 
     private void Notify([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
