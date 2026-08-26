@@ -19,7 +19,7 @@ Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계�
 
 ### 다운로드
 
-[최신 릴리즈](https://github.com/bmminky/potatoken-hub/releases/latest)에서 DMG 또는 ZIP을 받으세요. Apple Silicon(`arm64`) 전용입니다.
+[최신 릴리즈](https://github.com/bmminky/potatoken-hub/releases/latest)에서 DMG 또는 ZIP을 받으세요. Apple Silicon은 `arm64`, Intel Mac은 `x86_64`가 표시된 파일을 선택하세요.
 
 1. DMG를 열고 `potatoken hub.app`을 Applications 폴더로 드래그하거나, ZIP을 풀어서 옮깁니다.
 2. 처음 실행할 때 Finder에서 `potatoken hub.app`을 **우클릭 → 열기**로 실행하세요.
@@ -35,6 +35,8 @@ v1.17.0 배포 파일의 값입니다. [체크섬 파일](https://github.com/bmm
 ```
 c9075ad2abd44de481addacb324724da62a1ac9b7d9474cccc862e05283903f9  potatoken-hub-1.17.0-macOS-arm64.dmg
 b32c3318f50219c67b0a4cd28c96193a00277cf3aebbc990f8945649b29f4a83  potatoken-hub-1.17.0-macOS-arm64.zip
+3f3bc89e50a869b1a6dc185b0957a2783478148073192af8bf200019ec03b714  potatoken-hub-1.17.0-macOS-x86_64.dmg
+e5f0af6b7c2594aa92093384b762cfdbfb95a6318394b772d6a23599182f4cc6  potatoken-hub-1.17.0-macOS-x86_64.zip
 7ec112b501775e60c688ad9f794848d49265f793644a31a1673cb3510ef94c80  potatoken-hub-1.17.0-windows-x64.zip
 ```
 
@@ -115,7 +117,7 @@ no analytics, no provider API keys, no network calls.
 
 ### Download
 
-Get the DMG or ZIP from the [latest release](https://github.com/bmminky/potatoken-hub/releases/latest). Apple Silicon (`arm64`) only.
+Get the DMG or ZIP from the [latest release](https://github.com/bmminky/potatoken-hub/releases/latest). Choose `arm64` for Apple Silicon or `x86_64` for an Intel Mac.
 
 1. Open the DMG and drag `potatoken hub.app` into Applications, or unzip and move it there.
 2. On first launch, **right-click `potatoken hub.app` in Finder and choose Open**.
@@ -131,6 +133,8 @@ Values for v1.17.0. The [checksum file](https://github.com/bmminky/potatoken-hub
 ```
 c9075ad2abd44de481addacb324724da62a1ac9b7d9474cccc862e05283903f9  potatoken-hub-1.17.0-macOS-arm64.dmg
 b32c3318f50219c67b0a4cd28c96193a00277cf3aebbc990f8945649b29f4a83  potatoken-hub-1.17.0-macOS-arm64.zip
+3f3bc89e50a869b1a6dc185b0957a2783478148073192af8bf200019ec03b714  potatoken-hub-1.17.0-macOS-x86_64.dmg
+e5f0af6b7c2594aa92093384b762cfdbfb95a6318394b772d6a23599182f4cc6  potatoken-hub-1.17.0-macOS-x86_64.zip
 7ec112b501775e60c688ad9f794848d49265f793644a31a1673cb3510ef94c80  potatoken-hub-1.17.0-windows-x64.zip
 ```
 
@@ -208,7 +212,7 @@ Mac にすでに保存されているローカルの使用量記録だけを読�
 
 ### ダウンロード
 
-[最新リリース](https://github.com/bmminky/potatoken-hub/releases/latest)から DMG または ZIP を入手してください。Apple Silicon(`arm64`)専用です。
+[最新リリース](https://github.com/bmminky/potatoken-hub/releases/latest)から DMG または ZIP を入手してください。Apple Silicon は `arm64`、Intel Mac は `x86_64` と表示されたファイルを選んでください。
 
 1. DMG を開いて `potatoken hub.app` を Applications フォルダにドラッグするか、ZIP を展開して移動します。
 2. 初回起動時は Finder で `potatoken hub.app` を**右クリック → 開く**で起動してください。
@@ -224,6 +228,8 @@ v1.17.0 の値です。[チェックサムファイル](https://github.com/bmmin
 ```
 c9075ad2abd44de481addacb324724da62a1ac9b7d9474cccc862e05283903f9  potatoken-hub-1.17.0-macOS-arm64.dmg
 b32c3318f50219c67b0a4cd28c96193a00277cf3aebbc990f8945649b29f4a83  potatoken-hub-1.17.0-macOS-arm64.zip
+3f3bc89e50a869b1a6dc185b0957a2783478148073192af8bf200019ec03b714  potatoken-hub-1.17.0-macOS-x86_64.dmg
+e5f0af6b7c2594aa92093384b762cfdbfb95a6318394b772d6a23599182f4cc6  potatoken-hub-1.17.0-macOS-x86_64.zip
 7ec112b501775e60c688ad9f794848d49265f793644a31a1673cb3510ef94c80  potatoken-hub-1.17.0-windows-x64.zip
 ```
 
@@ -303,7 +309,7 @@ OpenAI、Anthropic とは無関係の個人プロジェクトです。
 
 ### 下载
 
-从[最新版本](https://github.com/bmminky/potatoken-hub/releases/latest)获取 DMG 或 ZIP。仅支持 Apple Silicon(`arm64`)。
+从[最新版本](https://github.com/bmminky/potatoken-hub/releases/latest)获取 DMG 或 ZIP。Apple Silicon 请选择标有 `arm64` 的文件，Intel Mac 请选择 `x86_64`。
 
 1. 打开 DMG,将 `potatoken hub.app` 拖入 Applications 文件夹;或解压 ZIP 后手动移动过去。
 2. 首次启动时,在 Finder 中**右键点击 `potatoken hub.app` → 打开**。
@@ -319,6 +325,8 @@ OpenAI、Anthropic とは無関係の個人プロジェクトです。
 ```
 c9075ad2abd44de481addacb324724da62a1ac9b7d9474cccc862e05283903f9  potatoken-hub-1.17.0-macOS-arm64.dmg
 b32c3318f50219c67b0a4cd28c96193a00277cf3aebbc990f8945649b29f4a83  potatoken-hub-1.17.0-macOS-arm64.zip
+3f3bc89e50a869b1a6dc185b0957a2783478148073192af8bf200019ec03b714  potatoken-hub-1.17.0-macOS-x86_64.dmg
+e5f0af6b7c2594aa92093384b762cfdbfb95a6318394b772d6a23599182f4cc6  potatoken-hub-1.17.0-macOS-x86_64.zip
 7ec112b501775e60c688ad9f794848d49265f793644a31a1673cb3510ef94c80  potatoken-hub-1.17.0-windows-x64.zip
 ```
 
