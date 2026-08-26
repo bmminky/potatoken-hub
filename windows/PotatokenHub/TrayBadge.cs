@@ -22,8 +22,16 @@ public static class TrayBadge
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool DestroyIcon(IntPtr handle);
 
-    public static Icon Render(double? claude, double? codex)
+    public static Icon Render(IReadOnlyList<(Provider Provider, double? Remaining)> segments)
     {
+        if (segments.Count == 0)
+        {
+            var executable = Environment.ProcessPath;
+            return executable is not null && Icon.ExtractAssociatedIcon(executable) is { } icon
+                ? icon
+                : (Icon)SystemIcons.Application.Clone();
+        }
+
         using var bitmap = new Bitmap(Size, Size);
         using (var g = Graphics.FromImage(bitmap))
         {
@@ -31,8 +39,15 @@ public static class TrayBadge
             g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
             g.Clear(Color.Transparent);
 
-            DrawRow(g, y: 0, value: claude, color: Color.FromArgb(0xD9, 0x77, 0x57));
-            DrawRow(g, y: 8, value: codex, color: Color.FromArgb(0xBD, 0xBD, 0xC4));
+            if (segments.Count == 1)
+            {
+                DrawRow(g, y: 4, value: segments[0].Remaining, color: ColorFor(segments[0].Provider));
+            }
+            else
+            {
+                DrawRow(g, y: 0, value: segments[0].Remaining, color: ColorFor(segments[0].Provider));
+                DrawRow(g, y: 8, value: segments[1].Remaining, color: ColorFor(segments[1].Provider));
+            }
         }
 
         // Icon.FromHandle does not own the handle, so the GDI icon it wraps has
@@ -49,6 +64,10 @@ public static class TrayBadge
             DestroyIcon(handle);
         }
     }
+
+    private static Color ColorFor(Provider provider) => provider == Provider.Claude
+        ? Color.FromArgb(0xD9, 0x77, 0x57)
+        : Color.FromArgb(0xBD, 0xBD, 0xC4);
 
     /// <summary>
     /// One provider's number, filling its half of the slot.
@@ -76,7 +95,7 @@ public static class TrayBadge
         g.DrawString(text, valueFont, valueBrush, new RectangleF(0, y, Size, 8), format);
     }
 
-    public static string Tooltip(ProviderSnapshot claude, ProviderSnapshot codex)
+    public static string Tooltip(IReadOnlyList<ProviderSnapshot> snapshots)
     {
         static string Part(ProviderSnapshot snapshot)
         {
@@ -85,6 +104,8 @@ public static class TrayBadge
             return value is { } v ? $"{name} {(int)v}%" : $"{name} —";
         }
 
-        return $"{Part(claude)}  ·  {Part(codex)}";
+        return snapshots.Count == 0
+            ? "potatoken hub"
+            : string.Join("  ·  ", snapshots.Select(Part));
     }
 }

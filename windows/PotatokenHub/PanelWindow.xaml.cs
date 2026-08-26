@@ -51,7 +51,15 @@ public partial class PanelWindow : Window
     /// <summary>Where the window sat at the previous mouse-down.</summary>
     private Point? _positionAtLastMouseDown;
 
-    private Size SizeOf(SizePreset preset) => preset == SizePreset.Large ? LargeSize : SmallSize;
+    private Size SizeOf(SizePreset preset)
+    {
+        var count = _model.DisplayedProviders.Count;
+        if (preset == SizePreset.Small)
+        {
+            return new Size(SmallSize.Width, count switch { 0 => 80, 1 => 96, _ => SmallSize.Height });
+        }
+        return new Size(LargeSize.Width, count switch { 0 => 142, 1 => 174, _ => LargeSize.Height });
+    }
 
     private SizePreset PresetNearest(double width) =>
         width >= (SmallSize.Width + LargeSize.Width) / 2 ? SizePreset.Large : SizePreset.Small;
@@ -62,7 +70,14 @@ public partial class PanelWindow : Window
     {
         InitializeComponent();
         _model = model;
-        _model.PropertyChanged += (_, _) => Dispatcher.Invoke(Render);
+        _model.PropertyChanged += (_, e) => Dispatcher.Invoke(() =>
+        {
+            Render();
+            if (e.PropertyName == nameof(UsageModel.DisplayedProviders))
+            {
+                AnimateTo(SizeOf(_activePreset));
+            }
+        });
 
         Width = SmallSize.Width;
         Height = SmallSize.Height;
@@ -226,14 +241,25 @@ public partial class PanelWindow : Window
 
     private void Render()
     {
-        var isLarge = Width >= LargeSize.Width - LargeTolerance && Height >= LargeSize.Height - LargeTolerance;
+        var isLarge = Width >= LargeSize.Width - LargeTolerance;
         LargeView.Visibility = isLarge ? Visibility.Visible : Visibility.Collapsed;
         SmallView.Visibility = isLarge ? Visibility.Collapsed : Visibility.Visible;
 
+        var showClaude = _model.IsDisplayed(Provider.Claude);
+        var showCodex = _model.IsDisplayed(Provider.Codex);
+        LargeClaude.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
+        LargeCodex.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
+        LargeProviderSeparator.Visibility = showClaude && showCodex ? Visibility.Visible : Visibility.Collapsed;
+        LargeEmpty.Visibility = !showClaude && !showCodex ? Visibility.Visible : Visibility.Collapsed;
+        SmallClaude.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
+        SmallCodex.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
+        SmallClaude.Margin = showClaude && showCodex ? new Thickness(0, 0, 0, 7) : new Thickness(0);
+        SmallEmpty.Visibility = !showClaude && !showCodex ? Visibility.Visible : Visibility.Collapsed;
+
         if (isLarge)
         {
-            BuildLargeSection(LargeClaude, _model.Claude);
-            BuildLargeSection(LargeCodex, _model.Codex);
+            if (showClaude) BuildLargeSection(LargeClaude, _model.Claude);
+            if (showCodex) BuildLargeSection(LargeCodex, _model.Codex);
             // Formatted with the display language's culture, not the machine's
             // regional one. Windows keeps those separate, so an English display
             // language on a Korean region was printing "Updated 오전 12:44".
@@ -247,8 +273,8 @@ public partial class PanelWindow : Window
         }
         else
         {
-            BuildSmallRow(SmallClaude, _model.Claude);
-            BuildSmallRow(SmallCodex, _model.Codex);
+            if (showClaude) BuildSmallRow(SmallClaude, _model.Claude);
+            if (showCodex) BuildSmallRow(SmallCodex, _model.Codex);
         }
     }
 

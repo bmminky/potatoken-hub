@@ -60,16 +60,23 @@ public partial class App : Application
 
     private void UpdateTray()
     {
+        var snapshots = _model.DisplayedProviders
+            .Select(_model.SnapshotFor)
+            .ToList();
+        var segments = snapshots
+            .Select(snapshot => (
+                Provider: snapshot.Provider,
+                Remaining: UsageModel.ShortestWindowRemaining(snapshot)))
+            .ToList();
+
         var previous = _currentIcon;
-        _currentIcon = TrayBadge.Render(
-            UsageModel.ShortestWindowRemaining(_model.Claude),
-            UsageModel.ShortestWindowRemaining(_model.Codex));
+        _currentIcon = TrayBadge.Render(segments);
         _tray.Icon = _currentIcon;
         // Only safe to dispose after the control has taken the new one.
         previous?.Dispose();
 
         // A NotifyIcon tooltip is capped at 63 characters.
-        var tooltip = TrayBadge.Tooltip(_model.Claude, _model.Codex);
+        var tooltip = TrayBadge.Tooltip(snapshots);
         _tray.Text = tooltip.Length > 63 ? tooltip[..63] : tooltip;
     }
 
@@ -85,6 +92,7 @@ public partial class App : Application
         menu.Items.Add(new ToolStripSeparator());
 
         menu.Items.Add(BuildSizeMenu());
+        menu.Items.Add(BuildProviderVisibilityMenu());
 
         var onTop = new ToolStripMenuItem(
             L.T(ko: "항상 위", en: "Always on Top", ja: "常に手前に表示", zh: "总在最前"),
@@ -177,6 +185,37 @@ public partial class App : Application
             })
             { Checked = L.Preference == language };
             parent.DropDownItems.Add(item);
+        }
+
+        return parent;
+    }
+
+    private ToolStripMenuItem BuildProviderVisibilityMenu()
+    {
+        var parent = new ToolStripMenuItem(
+            L.T(ko: "표시할 서비스", en: "Displayed Services", ja: "表示するサービス", zh: "显示的服务"));
+
+        (ProviderVisibility Visibility, string Title)[] options =
+        [
+            (ProviderVisibility.Automatic, L.T(ko: "자동", en: "Automatic", ja: "自動", zh: "自动")),
+            (ProviderVisibility.AlwaysShow, L.T(ko: "항상 표시", en: "Always Show", ja: "常に表示", zh: "始终显示")),
+            (ProviderVisibility.Hidden, L.T(ko: "숨김", en: "Hidden", ja: "非表示", zh: "隐藏")),
+        ];
+
+        foreach (var provider in Enum.GetValues<Provider>())
+        {
+            var providerItem = new ToolStripMenuItem(provider.DisplayName());
+            foreach (var (visibility, title) in options)
+            {
+                var capturedProvider = provider;
+                var capturedVisibility = visibility;
+                providerItem.DropDownItems.Add(new ToolStripMenuItem(title, null, (_, _) =>
+                {
+                    _model.SetVisibility(capturedProvider, capturedVisibility);
+                })
+                { Checked = _model.VisibilityFor(provider) == visibility });
+            }
+            parent.DropDownItems.Add(providerItem);
         }
 
         return parent;

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import TokenGaugeCore
 
@@ -9,7 +10,10 @@ struct ContentView: View {
     var body: some View {
         GeometryReader { geo in
             let tolerance = PanelSize.largeRenderTolerance
-            let isLarge = geo.size.width >= largeSize.width - tolerance && geo.size.height >= largeSize.height - tolerance
+            // Provider visibility changes the content height, but the two
+            // presets always retain distinct widths. Width therefore remains
+            // the stable tier signal after a provider is hidden or restored.
+            let isLarge = geo.size.width >= largeSize.width - tolerance
 
             Group {
                 if isLarge {
@@ -32,10 +36,16 @@ struct FullContent: View {
     let onHide: () -> Void
 
     var body: some View {
+        let snapshots = model.displayedSnapshots
         VStack(alignment: .leading, spacing: 12) {
-            providerSection(snapshot: model.claude)
-            Divider()
-            providerSection(snapshot: model.codex)
+            if snapshots.isEmpty {
+                EmptyProvidersView()
+            } else {
+                ForEach(Array(snapshots.enumerated()), id: \.element.provider) { index, snapshot in
+                    if index > 0 { Divider() }
+                    providerSection(snapshot: snapshot)
+                }
+            }
             Divider()
             FooterView(model: model, onHide: onHide)
         }
@@ -90,13 +100,34 @@ struct MinimalContent: View {
     @ObservedObject var model: UsageModel
 
     var body: some View {
+        let snapshots = model.displayedSnapshots
         VStack(alignment: .leading, spacing: 8) {
-            CompactRow(snapshot: model.claude)
-            CompactRow(snapshot: model.codex)
+            if snapshots.isEmpty {
+                EmptyProvidersView()
+            } else {
+                ForEach(snapshots, id: \.provider) { snapshot in
+                    CompactRow(snapshot: snapshot)
+                }
+            }
         }
         .padding(.horizontal, 8)
         .padding(.top, 8)
         .padding(.bottom, 14)
+    }
+}
+
+private struct EmptyProvidersView: View {
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(nsImage: NSApplication.shared.applicationIconImage)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+            Text("potatoken hub")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 }
 

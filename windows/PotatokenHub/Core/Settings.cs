@@ -3,6 +3,13 @@ using System.Text.Json;
 
 namespace PotatokenHub.Core;
 
+public enum ProviderVisibility
+{
+    Automatic,
+    AlwaysShow,
+    Hidden,
+}
+
 /// <summary>
 /// A small JSON file next to the app's other roaming data, standing in for the
 /// macOS build's UserDefaults.
@@ -12,6 +19,8 @@ public static class Settings
     private sealed class Model
     {
         public string? Language { get; set; }
+        public string? ClaudeVisibility { get; set; }
+        public string? CodexVisibility { get; set; }
         public bool AlwaysOnTop { get; set; } = true;
         public double? PanelLeft { get; set; }
         public double? PanelTop { get; set; }
@@ -77,6 +86,23 @@ public static class Settings
             Current.AlwaysOnTop = value;
             Save();
         }
+    }
+
+    public static ProviderVisibility VisibilityFor(Provider provider)
+    {
+        var raw = provider == Provider.Claude
+            ? Current.ClaudeVisibility
+            : Current.CodexVisibility;
+        return Enum.TryParse<ProviderVisibility>(raw, out var value)
+            ? value
+            : ProviderVisibility.Automatic;
+    }
+
+    public static void SetVisibility(Provider provider, ProviderVisibility visibility)
+    {
+        if (provider == Provider.Claude) Current.ClaudeVisibility = visibility.ToString();
+        else Current.CodexVisibility = visibility.ToString();
+        Save();
     }
 
     public static (double Left, double Top)? PanelPosition

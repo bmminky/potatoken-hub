@@ -26,6 +26,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case large
     }
 
+    private final class ProviderVisibilityChoice: NSObject {
+        let provider: Provider
+        let visibility: ProviderVisibility
+
+        init(provider: Provider, visibility: ProviderVisibility) {
+            self.provider = provider
+            self.visibility = visibility
+        }
+    }
+
     /// Which preset the user last chose. Held as state rather than read back
     /// off the window, because the whole point of tracking it is to recover
     /// when something else has already changed the window's size — inferring
@@ -89,27 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         renderBadge()
 
-        // Measured with the exact same .regularMaterial/clipShape wrapper the
-        // real window uses. Now that the hosted view ignores the title bar's
-        // safe area, the window frame height and the SwiftUI layout height are
-        // the same number, so this only needs slack for rounding.
-        let measurementBuffer: CGFloat = 2
-
-        func measuredPresetHeight<V: View>(_ view: V, width: CGFloat) -> CGFloat {
-            let wrapped = view
-                .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            return measuredHeight(of: wrapped, width: width) + measurementBuffer
-        }
-
-        smallSize = NSSize(
-            width: PanelSize.smallWidth,
-            height: max(measuredPresetHeight(MinimalContent(model: model), width: PanelSize.smallWidth), 60)
-        )
-        largeSize = NSSize(
-            width: PanelSize.largeWidth,
-            height: max(measuredPresetHeight(FullContent(model: model, onHide: {}), width: PanelSize.largeWidth), 200)
-        )
+        updateMeasuredPresetSizes()
 
         let hosting = NSHostingController(
             rootView: ContentView(model: model, largeSize: largeSize, onHide: { [weak self] in self?.closePanel() })
@@ -149,6 +139,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .receive(on: RunLoop.main)
             .sink { [weak self] segments in
                 self?.renderBadge(segments)
+            }
+            .store(in: &cancellables)
+
+        model.$displayedProviders
+            .dropFirst()
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.displayedProvidersDidChange()
             }
             .store(in: &cancellables)
     }
@@ -209,11 +208,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func renderBadge(_ segments: [StatusItemBadge.Segment]? = nil) {
         guard let button = statusItem.button else { return }
+        let segments = segments ?? model.menuBarSegments
+        if segments.isEmpty {
+            let icon = NSApplication.shared.applicationIconImage.copy() as? NSImage
+            icon?.size = NSSize(width: 18, height: 18)
+            button.image = icon
+            return
+        }
         let isDark = button.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         button.image = StatusItemBadge.image(
-            for: segments ?? model.menuBarSegments,
+            for: segments,
             isDarkMenuBar: isDark
         )
+    }
+
+    private func updateMeasuredPresetSizes() {
+        let measurementBuffer: CGFloat = 2
+
+        func measuredPresetHeight<V: View>(_ view: V, width: CGFloat) -> CGFloat {
+            let wrapped = view
+                .background(.regularMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            return measuredHeight(of: wrapped, width: width) + measurementBuffer
+        }
+
+        smallSize = NSSize(
+            width: PanelSize.smallWidth,
+            height: max(measuredPresetHeight(MinimalContent(model: model), width: PanelSize.smallWidth), 60)
+        )
+        largeSize = NSSize(
+            width: PanelSize.largeWidth,
+            height: max(measuredPresetHeight(FullContent(model: model, onHide: {}), width: PanelSize.largeWidth), 150)
+        )
+    }
+
+    private func displayedProvidersDidChange() {
+        updateMeasuredPresetSizes()
+        let target = size(of: activePreset)
+        panel.enforcedSize = target
+
+        if isPanelVisible {
+            animatePanel(to: target, keepingHorizontalCenter: true, style: .crisp)
+        } else {
+            performingOwnResize {
+                panel.setContentSize(target)
+            }
+        }
     }
 
 
@@ -516,6 +556,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(refreshItem)
 
         menu.addItem(sizeMenuItem())
+        menu.addItem(providerVisibilityMenuItem())
         menu.addItem(alwaysOnTopMenuItem())
 
         let hideItem = NSMenuItem(title: L.t(ko: "숨기기", en: "Hide", ja: "隠す", zh: "隐藏"), action: #selector(hidePanel), keyEquivalent: "")
@@ -533,6 +574,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(refreshItem)
 
         menu.addItem(sizeMenuItem())
+        menu.addItem(providerVisibilityMenuItem())
         menu.addItem(alwaysOnTopMenuItem())
 
         menu.addItem(.separator())
@@ -597,6 +639,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         item.submenu = submenu
         return item
+    }
+
+    private func providerVisibilityMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(
+            title: L.t(ko: "표시할 서비스", en: "Displayed Services", ja: "表示するサービス", zh: "显示的服务"),
+            action: nil,
+            keyEquivalent: ""
+        )
+        let providersMenu = NSMenu()
+
+        let options: [(ProviderVisibility, String)] = [
+            (.automatic, L.t(ko: "자동", en: "Automatic", ja: "自動", zh: "自动")),
+            (.alwaysShow, L.t(ko: "항상 표시", en: "Always Show", ja: "常に表示", zh: "始终显示")),
+            (.hidden, L.t(ko: "숨김", en: "Hidden", ja: "非表示", zh: "隐藏")),
+        ]
+
+        for provider in Provider.allCases {
+            let providerItem = NSMenuItem(title: provider.rawValue, action: nil, keyEquivalent: "")
+            let providerMenu = NSMenu()
+            for (visibility, title) in options {
+                let option = NSMenuItem(
+                    title: title,
+                    action: #selector(selectProviderVisibility(_:)),
+                    keyEquivalent: ""
+                )
+                option.target = self
+                option.representedObject = ProviderVisibilityChoice(provider: provider, visibility: visibility)
+                option.state = model.visibility(for: provider) == visibility ? .on : .off
+                providerMenu.addItem(option)
+            }
+            providerItem.submenu = providerMenu
+            providersMenu.addItem(providerItem)
+        }
+
+        item.submenu = providersMenu
+        return item
+    }
+
+    @objc private func selectProviderVisibility(_ sender: NSMenuItem) {
+        guard let choice = sender.representedObject as? ProviderVisibilityChoice else { return }
+        model.setVisibility(choice.visibility, for: choice.provider)
     }
 
     @objc private func selectLanguage(_ sender: NSMenuItem) {

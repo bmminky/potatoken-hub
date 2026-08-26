@@ -42,12 +42,13 @@ macOS: `shasum -a 256 파일명` / Windows: `certutil -hashfile 파일명 SHA256
 
 ### 기능
 
-- **메뉴바 표시** — 각 제공자의 가장 빠듯한 남은 비율을 `Cl 74%  Cx 55%` 형태로 표시
+- **메뉴바 표시** — 각 제공자의 5시간 남은 비율을 `Cl 74%  Cx 55%` 형태로 표시
 - **두 가지 창 크기** — 창을 더블클릭하거나 우클릭 메뉴의 `창 크기`에서 전환
   - 소형: Claude/Codex 각각 한 줄 요약 + 사용량 막대
   - 대형: 창(5시간/주간/7일)별 상세 게이지, 리셋 예상 시각, 새로고침·숨기기
 - **15초마다 자동 새로고침**
 - **우클릭 메뉴** — 창 크기, 항상 위, 로그인 시 자동 실행 토글, 앱 종료
+- **서비스별 표시 설정** — Claude와 Codex를 각각 자동·항상 표시·숨김으로 설정
 - **위치·크기 기억** — 창을 닫은 자리에 그대로 다시 열림
 - **4개 언어** — 한국어·English·日本語·中文, 시스템 언어 자동 감지 또는 트레이 메뉴에서 수동 전환
 - Dock 아이콘 없음 (`LSUIElement`)
@@ -137,12 +138,13 @@ macOS: `shasum -a 256 <file>` / Windows: `certutil -hashfile <file> SHA256`
 
 ### Features
 
-- **Menu bar readout** — each provider's tightest remaining percentage, shown as `Cl 74%  Cx 55%`
+- **Menu bar readout** — each provider's 5-hour remaining percentage, shown as `Cl 74%  Cx 55%`
 - **Two panel sizes** — switch by double-clicking the window, or from `Window Size` in the right-click menu
   - Small: a one-line summary and usage bar per provider
   - Large: a detailed gauge per window (5h/weekly/7d), estimated reset time, refresh/hide
 - **Auto-refresh every 15 seconds**
 - **Right-click menu** — window size, always on top, toggle launch at login, quit
+- **Per-provider visibility** — set Claude and Codex independently to Automatic, Always Show, or Hidden
 - **Remembers position and size** — reopens exactly where you left it
 - **4 languages** — Korean/English/Japanese/Chinese, auto-detected from the system or switched manually from the tray menu
 - No Dock icon (`LSUIElement`)
@@ -229,12 +231,13 @@ macOS: `shasum -a 256 ファイル名` / Windows: `certutil -hashfile ファイ�
 
 ### 機能
 
-- **メニューバー表示** — 各プロバイダーの最も逼迫した残り割合を `Cl 74%  Cx 55%` の形式で表示
+- **メニューバー表示** — 各プロバイダーの5時間枠の残り割合を `Cl 74%  Cx 55%` の形式で表示
 - **2種類のウィンドウサイズ** — ウィンドウをダブルクリックするか、右クリックメニューの「ウインドウサイズ」で切り替え
   - 小: Claude/Codex それぞれ1行の要約と使用量バー
   - 大: ウィンドウ(5時間/週間/7日)ごとの詳細ゲージ、リセット予想時刻、更新・非表示
 - **15秒ごとに自動更新**
 - **右クリックメニュー** — ウインドウサイズ、常に手前に表示、ログイン時の自動起動の切り替え、アプリ終了
+- **プロバイダー別の表示設定** — Claude と Codex をそれぞれ自動・常に表示・非表示に設定
 - **位置・サイズを記憶** — 閉じた場所にそのまま再度開く
 - **4言語対応** — 한国語・English・日本語・中文、システム言語の自動検出またはトレイメニューから手動切り替え
 - Dock アイコンなし (`LSUIElement`)
@@ -323,14 +326,15 @@ macOS: `shasum -a 256 文件名` / Windows: `certutil -hashfile 文件名 SHA256
 
 ### 功能
 
-- **菜单栏显示** — 以 `Cl 74%  Cx 55%` 的形式显示各服务商最紧张的剩余比例
+- **菜单栏显示** — 以 `Cl 74%  Cx 55%` 的形式显示各服务商5小时额度的剩余比例
 - **两种窗口尺寸** — 双击窗口,或在右键菜单的「窗口大小」中切换
   - 小尺寸:Claude/Codex 各一行摘要 + 使用量条
   - 大尺寸:每个窗口(5小时/每周/7天)的详细进度条、预计重置时间、刷新/隐藏
 - **每15秒自动刷新**
 - **右键菜单** — 窗口大小、总在最前、切换开机自启动、退出应用
+- **按服务商控制显示** — 可分别将 Claude 和 Codex 设为自动、始终显示或隐藏
 - **记住位置和大小** — 关闭后下次在原位置重新打开
-- **支持4种语言** — 한国语·English·日本语·中文,自动检测系统语言,或在托盘菜单中手动切换
+- **支持4种语言** — 韩语·English·日本语·中文,自动检测系统语言,或在托盘菜单中手动切换
 - 无 Dock 图标 (`LSUIElement`)
 
 ### 数据来源
