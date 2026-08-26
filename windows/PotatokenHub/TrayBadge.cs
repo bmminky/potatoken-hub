@@ -31,8 +31,8 @@ public static class TrayBadge
             g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
             g.Clear(Color.Transparent);
 
-            DrawRow(g, y: 0, value: claude, accent: Color.FromArgb(0xD9, 0x77, 0x57));
-            DrawRow(g, y: 8, value: codex, accent: Color.FromArgb(0xBD, 0xBD, 0xC4));
+            DrawRow(g, y: 0, value: claude, color: Color.FromArgb(0xD9, 0x77, 0x57));
+            DrawRow(g, y: 8, value: codex, color: Color.FromArgb(0xBD, 0xBD, 0xC4));
         }
 
         // Icon.FromHandle does not own the handle, so the GDI icon it wraps has
@@ -50,27 +50,31 @@ public static class TrayBadge
         }
     }
 
-    private static void DrawRow(Graphics g, int y, double? value, Color accent)
+    /// <summary>
+    /// One provider's number, filling its half of the slot.
+    ///
+    /// The colour is the provider's own — Claude orange, Codex grey — and does
+    /// not track usage. With two bare numbers stacked and nothing else to tell
+    /// them apart, the colour is carrying the identity, so it has to stay put.
+    /// </summary>
+    private static void DrawRow(Graphics g, int y, double? value, Color color)
     {
-        // A narrow provider stripe replaces C/X, leaving almost the full tray
-        // width for the percentage while preserving Claude/Codex identity.
-        using var accentBrush = new SolidBrush(accent);
-        g.FillRectangle(accentBrush, 0, y + 1, 1.5f, 6);
-
         var text = value is { } v ? ((int)v).ToString() : "—";
-        using var valueFont = new Font("Segoe UI", 9f, FontStyle.Bold, GraphicsUnit.Pixel);
-        using var valueBrush = new SolidBrush(ToDrawingColor(UsagePalette.ColorFor(value, System.Windows.Media.Colors.White)));
+
+        // No accent stripe and no percent sign: at 16px a tray slot has room
+        // for the digits or for decoration, not both, and the digits are the
+        // part being read. Dropping the stripe also buys the glyphs the full
+        // width, so they can be set larger.
+        using var valueFont = new Font("Segoe UI", 10f, FontStyle.Bold, GraphicsUnit.Pixel);
+        using var valueBrush = new SolidBrush(color);
         using var format = new StringFormat(StringFormat.GenericTypographic)
         {
             Alignment = StringAlignment.Center,
             LineAlignment = StringAlignment.Center,
             FormatFlags = StringFormatFlags.NoWrap,
         };
-        g.DrawString(text, valueFont, valueBrush, new RectangleF(2, y, 14, 8), format);
+        g.DrawString(text, valueFont, valueBrush, new RectangleF(0, y, Size, 8), format);
     }
-
-    private static Color ToDrawingColor(System.Windows.Media.Color c) =>
-        Color.FromArgb(c.A, c.R, c.G, c.B);
 
     public static string Tooltip(ProviderSnapshot claude, ProviderSnapshot codex)
     {
