@@ -26,16 +26,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case large
     }
 
-    private final class ProviderVisibilityChoice: NSObject {
-        let provider: Provider
-        let visibility: ProviderVisibility
-
-        init(provider: Provider, visibility: ProviderVisibility) {
-            self.provider = provider
-            self.visibility = visibility
-        }
-    }
-
     /// Which preset the user last chose. Held as state rather than read back
     /// off the window, because the whole point of tracking it is to recover
     /// when something else has already changed the window's size — inferring
@@ -224,6 +214,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateMeasuredPresetSizes() {
         let measurementBuffer: CGFloat = 2
+        let showsOneProvider = model.displayedProviders.count == 1
+        let smallMinimumHeight: CGFloat = showsOneProvider ? 50 : 60
+        let largeMinimumHeight: CGFloat = showsOneProvider ? 130 : 150
 
         func measuredPresetHeight<V: View>(_ view: V, width: CGFloat) -> CGFloat {
             let wrapped = view
@@ -234,11 +227,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         smallSize = NSSize(
             width: PanelSize.smallWidth,
-            height: max(measuredPresetHeight(MinimalContent(model: model), width: PanelSize.smallWidth), 60)
+            height: max(
+                measuredPresetHeight(MinimalContent(model: model), width: PanelSize.smallWidth),
+                smallMinimumHeight
+            )
         )
         largeSize = NSSize(
             width: PanelSize.largeWidth,
-            height: max(measuredPresetHeight(FullContent(model: model, onHide: {}), width: PanelSize.largeWidth), 150)
+            height: max(
+                measuredPresetHeight(FullContent(model: model, onHide: {}), width: PanelSize.largeWidth),
+                largeMinimumHeight
+            )
         )
     }
 
@@ -649,27 +648,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         let providersMenu = NSMenu()
 
-        let options: [(ProviderVisibility, String)] = [
-            (.automatic, L.t(ko: "자동", en: "Automatic", ja: "自動", zh: "自动")),
-            (.alwaysShow, L.t(ko: "항상 표시", en: "Always Show", ja: "常に表示", zh: "始终显示")),
-            (.hidden, L.t(ko: "숨김", en: "Hidden", ja: "非表示", zh: "隐藏")),
-        ]
-
         for provider in Provider.allCases {
-            let providerItem = NSMenuItem(title: provider.rawValue, action: nil, keyEquivalent: "")
-            let providerMenu = NSMenu()
-            for (visibility, title) in options {
-                let option = NSMenuItem(
-                    title: title,
-                    action: #selector(selectProviderVisibility(_:)),
-                    keyEquivalent: ""
-                )
-                option.target = self
-                option.representedObject = ProviderVisibilityChoice(provider: provider, visibility: visibility)
-                option.state = model.visibility(for: provider) == visibility ? .on : .off
-                providerMenu.addItem(option)
-            }
-            providerItem.submenu = providerMenu
+            let providerItem = NSMenuItem(
+                title: provider.rawValue,
+                action: #selector(toggleProviderDisplayed(_:)),
+                keyEquivalent: ""
+            )
+            providerItem.target = self
+            providerItem.representedObject = provider
+            providerItem.state = model.isDisplayed(provider) ? .on : .off
             providersMenu.addItem(providerItem)
         }
 
@@ -677,9 +664,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return item
     }
 
-    @objc private func selectProviderVisibility(_ sender: NSMenuItem) {
-        guard let choice = sender.representedObject as? ProviderVisibilityChoice else { return }
-        model.setVisibility(choice.visibility, for: choice.provider)
+    @objc private func toggleProviderDisplayed(_ sender: NSMenuItem) {
+        guard let provider = sender.representedObject as? Provider else { return }
+        model.toggleDisplayed(provider)
     }
 
     @objc private func selectLanguage(_ sender: NSMenuItem) {

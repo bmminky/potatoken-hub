@@ -14,11 +14,11 @@ final class UsageModel: ObservableObject {
     private var timer: Timer?
     private var lastClaudeMTime: Date?
     private var lastCodexMTime: Date?
-    private var providerVisibility: [Provider: ProviderVisibility]
+    private var providerVisibility: [Provider: Bool]
 
     init() {
         providerVisibility = Dictionary(
-            uniqueKeysWithValues: Provider.allCases.map { ($0, ProviderVisibility.load(for: $0)) }
+            uniqueKeysWithValues: Provider.allCases.map { ($0, ProviderDisplayPreference.load(for: $0)) }
         )
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
@@ -51,30 +51,20 @@ final class UsageModel: ObservableObject {
         }
     }
 
-    func visibility(for provider: Provider) -> ProviderVisibility {
-        providerVisibility[provider] ?? .automatic
+    func isDisplayed(_ provider: Provider) -> Bool {
+        providerVisibility[provider] ?? true
     }
 
-    func setVisibility(_ visibility: ProviderVisibility, for provider: Provider) {
-        guard providerVisibility[provider] != visibility else { return }
-        providerVisibility[provider] = visibility
-        visibility.save(for: provider)
+    func toggleDisplayed(_ provider: Provider) {
+        let next = !isDisplayed(provider)
+        providerVisibility[provider] = next
+        ProviderDisplayPreference.save(next, for: provider)
         updateDisplayedProviders()
         menuBarSegments = computeMenuBarSegments()
     }
 
     private func updateDisplayedProviders() {
-        displayedProviders = Provider.allCases.filter { provider in
-            let snapshot = provider == .claude ? claude : codex
-            switch visibility(for: provider) {
-            case .automatic:
-                return snapshot.sourceExists
-            case .alwaysShow:
-                return true
-            case .hidden:
-                return false
-            }
-        }
+        displayedProviders = Provider.allCases.filter(isDisplayed)
     }
 
     /// Kept as label/value pairs rather than one prebuilt string so the badge
@@ -113,21 +103,18 @@ final class UsageModel: ObservableObject {
     }
 }
 
-enum ProviderVisibility: String, CaseIterable {
-    case automatic
-    case alwaysShow
-    case hidden
-
+enum ProviderDisplayPreference {
     private static func key(for provider: Provider) -> String {
         "TokenGauge.providerVisibility.\(provider.rawValue.lowercased())"
     }
 
-    static func load(for provider: Provider) -> ProviderVisibility {
-        UserDefaults.standard.string(forKey: key(for: provider))
-            .flatMap(ProviderVisibility.init(rawValue:)) ?? .automatic
+    static func load(for provider: Provider) -> Bool {
+        // Migrate the former three-state setting: only an explicit Hidden
+        // remains off; Automatic and Always Show both become visible.
+        UserDefaults.standard.string(forKey: key(for: provider)) != "hidden"
     }
 
-    func save(for provider: Provider) {
-        UserDefaults.standard.set(rawValue, forKey: Self.key(for: provider))
+    static func save(_ isDisplayed: Bool, for provider: Provider) {
+        UserDefaults.standard.set(isDisplayed ? "shown" : "hidden", forKey: key(for: provider))
     }
 }

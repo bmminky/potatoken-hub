@@ -3,13 +3,6 @@ using System.Text.Json;
 
 namespace PotatokenHub.Core;
 
-public enum ProviderVisibility
-{
-    Automatic,
-    AlwaysShow,
-    Hidden,
-}
-
 /// <summary>
 /// A small JSON file next to the app's other roaming data, standing in for the
 /// macOS build's UserDefaults.
@@ -88,20 +81,21 @@ public static class Settings
         }
     }
 
-    public static ProviderVisibility VisibilityFor(Provider provider)
+    public static bool IsProviderDisplayed(Provider provider)
     {
         var raw = provider == Provider.Claude
             ? Current.ClaudeVisibility
             : Current.CodexVisibility;
-        return Enum.TryParse<ProviderVisibility>(raw, out var value)
-            ? value
-            : ProviderVisibility.Automatic;
+        // Migrate the former three-state setting: Automatic and AlwaysShow
+        // both become visible; only an explicit Hidden remains off.
+        return !string.Equals(raw, "Hidden", StringComparison.OrdinalIgnoreCase);
     }
 
-    public static void SetVisibility(Provider provider, ProviderVisibility visibility)
+    public static void SetProviderDisplayed(Provider provider, bool isDisplayed)
     {
-        if (provider == Provider.Claude) Current.ClaudeVisibility = visibility.ToString();
-        else Current.CodexVisibility = visibility.ToString();
+        var value = isDisplayed ? "Shown" : "Hidden";
+        if (provider == Provider.Claude) Current.ClaudeVisibility = value;
+        else Current.CodexVisibility = value;
         Save();
     }
 

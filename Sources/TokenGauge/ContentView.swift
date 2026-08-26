@@ -37,6 +37,7 @@ struct FullContent: View {
 
     var body: some View {
         let snapshots = model.displayedSnapshots
+        let bottomPadding: CGFloat = snapshots.count == 1 ? 17 : 23
         VStack(alignment: .leading, spacing: 12) {
             if snapshots.isEmpty {
                 EmptyProvidersView()
@@ -51,7 +52,7 @@ struct FullContent: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 16)
-        .padding(.bottom, 23)
+        .padding(.bottom, bottomPadding)
     }
 
     @ViewBuilder
@@ -101,6 +102,7 @@ struct MinimalContent: View {
 
     var body: some View {
         let snapshots = model.displayedSnapshots
+        let bottomPadding: CGFloat = snapshots.count == 1 ? 8 : 14
         VStack(alignment: .leading, spacing: 8) {
             if snapshots.isEmpty {
                 EmptyProvidersView()
@@ -112,7 +114,7 @@ struct MinimalContent: View {
         }
         .padding(.horizontal, 8)
         .padding(.top, 8)
-        .padding(.bottom, 14)
+        .padding(.bottom, bottomPadding)
     }
 }
 

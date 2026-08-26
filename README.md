@@ -50,7 +50,7 @@ macOS: `shasum -a 256 파일명` / Windows: `certutil -hashfile 파일명 SHA256
   - 대형: 창(5시간/주간/7일)별 상세 게이지, 리셋 예상 시각, 새로고침·숨기기
 - **15초마다 자동 새로고침**
 - **우클릭 메뉴** — 창 크기, 항상 위, 로그인 시 자동 실행 토글, 앱 종료
-- **서비스별 표시 설정** — Claude와 Codex를 각각 자동·항상 표시·숨김으로 설정
+- **서비스별 표시 설정** — 우클릭 메뉴에서 Claude와 Codex 표시 여부를 각각 선택
 - **위치·크기 기억** — 창을 닫은 자리에 그대로 다시 열림
 - **4개 언어** — 한국어·English·日本語·中文, 시스템 언어 자동 감지 또는 트레이 메뉴에서 수동 전환
 - Dock 아이콘 없음 (`LSUIElement`)
@@ -148,7 +148,7 @@ macOS: `shasum -a 256 <file>` / Windows: `certutil -hashfile <file> SHA256`
   - Large: a detailed gauge per window (5h/weekly/7d), estimated reset time, refresh/hide
 - **Auto-refresh every 15 seconds**
 - **Right-click menu** — window size, always on top, toggle launch at login, quit
-- **Per-provider visibility** — set Claude and Codex independently to Automatic, Always Show, or Hidden
+- **Per-provider visibility** — show or hide Claude and Codex independently from the right-click menu
 - **Remembers position and size** — reopens exactly where you left it
 - **4 languages** — Korean/English/Japanese/Chinese, auto-detected from the system or switched manually from the tray menu
 - No Dock icon (`LSUIElement`)
@@ -243,7 +243,7 @@ macOS: `shasum -a 256 ファイル名` / Windows: `certutil -hashfile ファイ�
   - 大: ウィンドウ(5時間/週間/7日)ごとの詳細ゲージ、リセット予想時刻、更新・非表示
 - **15秒ごとに自動更新**
 - **右クリックメニュー** — ウインドウサイズ、常に手前に表示、ログイン時の自動起動の切り替え、アプリ終了
-- **プロバイダー別の表示設定** — Claude と Codex をそれぞれ自動・常に表示・非表示に設定
+- **プロバイダー別の表示設定** — 右クリックメニューで Claude と Codex の表示・非表示を個別に選択
 - **位置・サイズを記憶** — 閉じた場所にそのまま再度開く
 - **4言語対応** — 한国語・English・日本語・中文、システム言語の自動検出またはトレイメニューから手動切り替え
 - Dock アイコンなし (`LSUIElement`)
@@ -340,7 +340,7 @@ macOS: `shasum -a 256 文件名` / Windows: `certutil -hashfile 文件名 SHA256
   - 大尺寸:每个窗口(5小时/每周/7天)的详细进度条、预计重置时间、刷新/隐藏
 - **每15秒自动刷新**
 - **右键菜单** — 窗口大小、总在最前、切换开机自启动、退出应用
-- **按服务商控制显示** — 可分别将 Claude 和 Codex 设为自动、始终显示或隐藏
+- **按服务商控制显示** — 可在右键菜单中分别显示或隐藏 Claude 与 Codex
 - **记住位置和大小** — 关闭后下次在原位置重新打开
 - **支持4种语言** — 韩语·English·日本语·中文,自动检测系统语言,或在托盘菜单中手动切换
 - 无 Dock 图标 (`LSUIElement`)

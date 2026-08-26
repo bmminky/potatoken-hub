@@ -195,27 +195,15 @@ public partial class App : Application
         var parent = new ToolStripMenuItem(
             L.T(ko: "표시할 서비스", en: "Displayed Services", ja: "表示するサービス", zh: "显示的服务"));
 
-        (ProviderVisibility Visibility, string Title)[] options =
-        [
-            (ProviderVisibility.Automatic, L.T(ko: "자동", en: "Automatic", ja: "自動", zh: "自动")),
-            (ProviderVisibility.AlwaysShow, L.T(ko: "항상 표시", en: "Always Show", ja: "常に表示", zh: "始终显示")),
-            (ProviderVisibility.Hidden, L.T(ko: "숨김", en: "Hidden", ja: "非表示", zh: "隐藏")),
-        ];
-
         foreach (var provider in Enum.GetValues<Provider>())
         {
-            var providerItem = new ToolStripMenuItem(provider.DisplayName());
-            foreach (var (visibility, title) in options)
+            var capturedProvider = provider;
+            parent.DropDownItems.Add(new ToolStripMenuItem(
+                provider.DisplayName(), null, (_, _) =>
             {
-                var capturedProvider = provider;
-                var capturedVisibility = visibility;
-                providerItem.DropDownItems.Add(new ToolStripMenuItem(title, null, (_, _) =>
-                {
-                    _model.SetVisibility(capturedProvider, capturedVisibility);
-                })
-                { Checked = _model.VisibilityFor(provider) == visibility });
-            }
-            parent.DropDownItems.Add(providerItem);
+                _model.ToggleDisplayed(capturedProvider);
+            })
+            { Checked = _model.IsDisplayed(provider) });
         }
 
         return parent;

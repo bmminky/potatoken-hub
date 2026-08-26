@@ -56,9 +56,9 @@ public partial class PanelWindow : Window
         var count = _model.DisplayedProviders.Count;
         if (preset == SizePreset.Small)
         {
-            return new Size(SmallSize.Width, count switch { 0 => 80, 1 => 96, _ => SmallSize.Height });
+            return new Size(SmallSize.Width, count switch { 0 => 80, 1 => 88, _ => SmallSize.Height });
         }
-        return new Size(LargeSize.Width, count switch { 0 => 142, 1 => 174, _ => LargeSize.Height });
+        return new Size(LargeSize.Width, count switch { 0 => 142, 1 => 154, _ => LargeSize.Height });
     }
 
     private SizePreset PresetNearest(double width) =>

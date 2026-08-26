@@ -38,12 +38,9 @@ public sealed class UsageModel : INotifyPropertyChanged
         UpdateDisplayedProviders();
     }
 
-    public ProviderVisibility VisibilityFor(Provider provider) => Settings.VisibilityFor(provider);
-
-    public void SetVisibility(Provider provider, ProviderVisibility visibility)
+    public void ToggleDisplayed(Provider provider)
     {
-        if (VisibilityFor(provider) == visibility) return;
-        Settings.SetVisibility(provider, visibility);
+        Settings.SetProviderDisplayed(provider, !IsDisplayed(provider));
         UpdateDisplayedProviders();
     }
 
@@ -55,17 +52,7 @@ public sealed class UsageModel : INotifyPropertyChanged
     private void UpdateDisplayedProviders()
     {
         var next = Enum.GetValues<Provider>()
-            .Where(provider =>
-            {
-                var snapshot = SnapshotFor(provider);
-                return VisibilityFor(provider) switch
-                {
-                    ProviderVisibility.Automatic => snapshot.SourceExists,
-                    ProviderVisibility.AlwaysShow => true,
-                    ProviderVisibility.Hidden => false,
-                    _ => false,
-                };
-            })
+            .Where(Settings.IsProviderDisplayed)
             .ToList();
 
         if (_displayedProviders.SequenceEqual(next)) return;
