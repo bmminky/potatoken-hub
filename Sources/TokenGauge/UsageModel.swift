@@ -43,10 +43,10 @@ final class UsageModel: ObservableObject {
     /// can style the labels differently without having to parse them back out.
     private func computeMenuBarSegments() -> [StatusItemBadge.Segment] {
         var parts: [StatusItemBadge.Segment] = []
-        if let r = mostConstrainedRemaining(claude) {
+        if let r = shortestWindowRemaining(claude) {
             parts.append(.init(label: "Cl", value: "\(Int(r))%", provider: .claude, remaining: r))
         }
-        if let r = mostConstrainedRemaining(codex) {
+        if let r = shortestWindowRemaining(codex) {
             parts.append(.init(label: "Cx", value: "\(Int(r))%", provider: .codex, remaining: r))
         }
         return parts.isEmpty
@@ -54,9 +54,13 @@ final class UsageModel: ObservableObject {
             : parts
     }
 
-    private func mostConstrainedRemaining(_ snapshot: ProviderSnapshot) -> Double? {
+    /// Each menu-bar number represents the provider's shortest reported
+    /// allowance window (normally 5 hours), even when weekly is tighter.
+    private func shortestWindowRemaining(_ snapshot: ProviderSnapshot) -> Double? {
         guard snapshot.sourceExists else { return nil }
-        let values = snapshot.windows.compactMap { $0.remainingPercent }
-        return values.min()
+        return snapshot.windows
+            .filter { $0.remainingPercent != nil }
+            .min { $0.windowMinutes < $1.windowMinutes }?
+            .remainingPercent
     }
 }
