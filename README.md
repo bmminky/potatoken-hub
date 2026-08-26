@@ -28,6 +28,16 @@ Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계�
 
 서명 안내: 이 빌드는 애드혹 서명이며 Apple 공증을 받지 않았습니다(Developer ID 인증서가 없는 개인 프로젝트라서입니다). 그래서 처음 실행 시 Gatekeeper 경고가 뜹니다. Gatekeeper 우회를 원하지 않으면 아래 "빌드" 항목대로 소스에서 직접 빌드하세요.
 
+**무결성 확인 (SHA-256)**
+
+```
+a494ab508797ab6821887bd02fd3424ced5acf1fee2d681edecd5b666f42f9c2  potatoken-hub-1.10.0-macOS-arm64.dmg
+6fd1b6a8c904f38bfba39887443268b08304425d05b3110d2f386d416b8a63a6  potatoken-hub-1.10.0-macOS-arm64.zip
+a6c3568558c873690b4746546df821ad53e519f825a7eb444e74c08de3a7651d  potatoken-hub-1.10.0-windows-x64.zip
+```
+
+macOS: `shasum -a 256 파일명` / Windows: `certutil -hashfile 파일명 SHA256`
+
 ### 기능
 
 - **메뉴바 표시** — 각 제공자의 가장 빠듯한 남은 비율을 `Cl 74%  Cx 55%` 형태로 표시
@@ -111,6 +121,16 @@ Get the DMG or ZIP from the [latest release](https://github.com/bmminky/potatoke
 
 Signing notice: this build is ad-hoc signed and not notarized by Apple (a personal project without a Developer ID certificate), so Gatekeeper will warn on first launch. If you'd rather not override Gatekeeper, build from source using the instructions below.
 
+**Integrity check (SHA-256)**
+
+```
+a494ab508797ab6821887bd02fd3424ced5acf1fee2d681edecd5b666f42f9c2  potatoken-hub-1.10.0-macOS-arm64.dmg
+6fd1b6a8c904f38bfba39887443268b08304425d05b3110d2f386d416b8a63a6  potatoken-hub-1.10.0-macOS-arm64.zip
+a6c3568558c873690b4746546df821ad53e519f825a7eb444e74c08de3a7651d  potatoken-hub-1.10.0-windows-x64.zip
+```
+
+macOS: `shasum -a 256 <file>` / Windows: `certutil -hashfile <file> SHA256`
+
 ### Features
 
 - **Menu bar readout** — each provider's tightest remaining percentage, shown as `Cl 74%  Cx 55%`
@@ -190,6 +210,16 @@ Mac にすでに保存されているローカルの使用量記録だけを読�
 4. メニューバーで potatoken hub のゲージを探してください — Dock アイコンは意図的にありません。
 
 署名について: このビルドはアドホック署名のみで、Apple の公証は受けていません(Developer ID 証明書のない個人プロジェクトのため)。そのため初回起動時に Gatekeeper の警告が出ます。Gatekeeper を回避したくない場合は、下記の手順でソースからビルドしてください。
+
+**整合性確認(SHA-256)**
+
+```
+a494ab508797ab6821887bd02fd3424ced5acf1fee2d681edecd5b666f42f9c2  potatoken-hub-1.10.0-macOS-arm64.dmg
+6fd1b6a8c904f38bfba39887443268b08304425d05b3110d2f386d416b8a63a6  potatoken-hub-1.10.0-macOS-arm64.zip
+a6c3568558c873690b4746546df821ad53e519f825a7eb444e74c08de3a7651d  potatoken-hub-1.10.0-windows-x64.zip
+```
+
+macOS: `shasum -a 256 ファイル名` / Windows: `certutil -hashfile ファイル名 SHA256`
 
 ### 機能
 
@@ -272,6 +302,16 @@ OpenAI、Anthropic とは無関係の個人プロジェクトです。
 4. 在菜单栏中寻找 potatoken hub 的进度图标 —— 该应用刻意不提供 Dock 图标。
 
 签名说明:该构建仅进行了临时签名(ad-hoc),未经 Apple 公证(个人项目,没有 Developer ID 证书),因此首次启动时会出现 Gatekeeper 警告。如果不想绕过 Gatekeeper,可按下方说明自行从源码构建。
+
+**完整性校验(SHA-256)**
+
+```
+a494ab508797ab6821887bd02fd3424ced5acf1fee2d681edecd5b666f42f9c2  potatoken-hub-1.10.0-macOS-arm64.dmg
+6fd1b6a8c904f38bfba39887443268b08304425d05b3110d2f386d416b8a63a6  potatoken-hub-1.10.0-macOS-arm64.zip
+a6c3568558c873690b4746546df821ad53e519f825a7eb444e74c08de3a7651d  potatoken-hub-1.10.0-windows-x64.zip
+```
+
+macOS: `shasum -a 256 文件名` / Windows: `certutil -hashfile 文件名 SHA256`
 
 ### 功能
 
