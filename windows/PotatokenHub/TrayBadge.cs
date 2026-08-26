@@ -14,7 +14,9 @@ namespace PotatokenHub;
 /// </summary>
 public static class TrayBadge
 {
-    private const int Size = 32;
+    // Windows normally displays a tray slot at 16 logical pixels. Drawing a
+    // 32px bitmap made Windows shrink the already-small text a second time.
+    private const int Size = 16;
 
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -26,11 +28,11 @@ public static class TrayBadge
         using (var g = Graphics.FromImage(bitmap))
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+            g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
             g.Clear(Color.Transparent);
 
-            DrawRow(g, y: 0, label: "C", value: claude, accent: Color.FromArgb(0xD9, 0x77, 0x57));
-            DrawRow(g, y: 16, label: "X", value: codex, accent: Color.FromArgb(0xBD, 0xBD, 0xC4));
+            DrawRow(g, y: 0, value: claude, accent: Color.FromArgb(0xD9, 0x77, 0x57));
+            DrawRow(g, y: 8, value: codex, accent: Color.FromArgb(0xBD, 0xBD, 0xC4));
         }
 
         // Icon.FromHandle does not own the handle, so the GDI icon it wraps has
@@ -48,17 +50,23 @@ public static class TrayBadge
         }
     }
 
-    private static void DrawRow(Graphics g, int y, string label, double? value, Color accent)
+    private static void DrawRow(Graphics g, int y, double? value, Color accent)
     {
-        using var labelFont = new Font("Segoe UI", 8.5f, FontStyle.Bold, GraphicsUnit.Pixel);
-        using var valueFont = new Font("Segoe UI", 12f, FontStyle.Bold, GraphicsUnit.Pixel);
-
-        using var labelBrush = new SolidBrush(accent);
-        g.DrawString(label, labelFont, labelBrush, new PointF(-1, y + 3));
+        // A narrow provider stripe replaces C/X, leaving almost the full tray
+        // width for the percentage while preserving Claude/Codex identity.
+        using var accentBrush = new SolidBrush(accent);
+        g.FillRectangle(accentBrush, 0, y + 1, 1.5f, 6);
 
         var text = value is { } v ? ((int)v).ToString() : "—";
+        using var valueFont = new Font("Segoe UI", 9f, FontStyle.Bold, GraphicsUnit.Pixel);
         using var valueBrush = new SolidBrush(ToDrawingColor(UsagePalette.ColorFor(value, System.Windows.Media.Colors.White)));
-        g.DrawString(text, valueFont, valueBrush, new PointF(7, y + 1));
+        using var format = new StringFormat(StringFormat.GenericTypographic)
+        {
+            Alignment = StringAlignment.Center,
+            LineAlignment = StringAlignment.Center,
+            FormatFlags = StringFormatFlags.NoWrap,
+        };
+        g.DrawString(text, valueFont, valueBrush, new RectangleF(2, y, 14, 8), format);
     }
 
     private static Color ToDrawingColor(System.Windows.Media.Color c) =>
