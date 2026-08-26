@@ -171,12 +171,49 @@ public partial class PanelWindow : Window
         var ease = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 };
         var duration = new Duration(TimeSpan.FromMilliseconds(340));
 
-        _isPerformingOwnResize = true;
-        var widthAnimation = new DoubleAnimation(target.Width, duration) { EasingFunction = ease };
-        widthAnimation.Completed += (_, _) => _isPerformingOwnResize = false;
+        // Width alone grows from the left edge, which throws the card to the
+        // right as it expands. Move the left edge by half the difference so the
+        // panel changes tier around its own centre, the way the macOS build
+        // does. The top edge stays put, so it grows downward.
+        var targetLeft = Left + (Width - target.Width) / 2;
+        var area = SystemParameters.WorkArea;
+        targetLeft = Math.Clamp(targetLeft, area.Left, Math.Max(area.Left, area.Right - target.Width));
 
-        BeginAnimation(WidthProperty, widthAnimation);
-        BeginAnimation(HeightProperty, new DoubleAnimation(target.Height, duration) { EasingFunction = ease });
+        _isPerformingOwnResize = true;
+        Animate(LeftProperty, targetLeft, ease, duration);
+        Animate(HeightProperty, target.Height, ease, duration);
+        Animate(WidthProperty, target.Width, ease, duration, onCompleted: () => _isPerformingOwnResize = false);
+    }
+
+    /// <summary>
+    /// Animates one property and then hands it back.
+    ///
+    /// A finished animation normally keeps hold of its property, and anything
+    /// that assigns to it afterwards is silently ignored. That matters here
+    /// because DragMove writes Left and the DPI guard writes Width and Height —
+    /// left held, the panel would animate once and then refuse to be moved or
+    /// corrected. Stopping the animation and writing the final value by hand
+    /// releases the property while landing on the same number.
+    /// </summary>
+    private void Animate(
+        DependencyProperty property,
+        double to,
+        IEasingFunction ease,
+        Duration duration,
+        Action? onCompleted = null)
+    {
+        var animation = new DoubleAnimation(to, duration)
+        {
+            EasingFunction = ease,
+            FillBehavior = FillBehavior.Stop,
+        };
+        animation.Completed += (_, _) =>
+        {
+            BeginAnimation(property, null);
+            SetValue(property, to);
+            onCompleted?.Invoke();
+        };
+        BeginAnimation(property, animation);
     }
 
     private void OnRefreshClick(object sender, RoutedEventArgs e) => _model.Refresh();
