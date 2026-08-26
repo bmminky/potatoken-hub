@@ -30,12 +30,12 @@ Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계�
 
 **무결성 확인 (SHA-256)**
 
-v1.16.0 배포 파일의 값입니다. [체크섬 파일](https://github.com/bmminky/potatoken-hub/releases/download/v1.16.0/SHA256SUMS-1.16.0.txt)도 함께 제공합니다.
+v1.17.0 배포 파일의 값입니다. [체크섬 파일](https://github.com/bmminky/potatoken-hub/releases/download/v1.17.0/SHA256SUMS-1.17.0.txt)도 함께 제공합니다.
 
 ```
-af993eec1e916bfa3c3e08413b946e82c924d18b031d401040d6705591c83fc3  potatoken-hub-1.16.0-macOS-arm64.dmg
-f11172fe2384e0225d4a5842a56992e021b494e8118440a33b9338ef787e636b  potatoken-hub-1.16.0-macOS-arm64.zip
-e040bd8621c55899008e8ed551fcf3ac19b5168229d7e9101024bd5fcd7f3538  potatoken-hub-1.16.0-windows-x64.zip
+c9075ad2abd44de481addacb324724da62a1ac9b7d9474cccc862e05283903f9  potatoken-hub-1.17.0-macOS-arm64.dmg
+b32c3318f50219c67b0a4cd28c96193a00277cf3aebbc990f8945649b29f4a83  potatoken-hub-1.17.0-macOS-arm64.zip
+7ec112b501775e60c688ad9f794848d49265f793644a31a1673cb3510ef94c80  potatoken-hub-1.17.0-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 파일명` / Windows: `certutil -hashfile 파일명 SHA256`
@@ -126,12 +126,12 @@ Signing notice: this build is ad-hoc signed and not notarized by Apple (a person
 
 **Integrity check (SHA-256)**
 
-Values for v1.16.0. The [checksum file](https://github.com/bmminky/potatoken-hub/releases/download/v1.16.0/SHA256SUMS-1.16.0.txt) is included with the release.
+Values for v1.17.0. The [checksum file](https://github.com/bmminky/potatoken-hub/releases/download/v1.17.0/SHA256SUMS-1.17.0.txt) is included with the release.
 
 ```
-af993eec1e916bfa3c3e08413b946e82c924d18b031d401040d6705591c83fc3  potatoken-hub-1.16.0-macOS-arm64.dmg
-f11172fe2384e0225d4a5842a56992e021b494e8118440a33b9338ef787e636b  potatoken-hub-1.16.0-macOS-arm64.zip
-e040bd8621c55899008e8ed551fcf3ac19b5168229d7e9101024bd5fcd7f3538  potatoken-hub-1.16.0-windows-x64.zip
+c9075ad2abd44de481addacb324724da62a1ac9b7d9474cccc862e05283903f9  potatoken-hub-1.17.0-macOS-arm64.dmg
+b32c3318f50219c67b0a4cd28c96193a00277cf3aebbc990f8945649b29f4a83  potatoken-hub-1.17.0-macOS-arm64.zip
+7ec112b501775e60c688ad9f794848d49265f793644a31a1673cb3510ef94c80  potatoken-hub-1.17.0-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 <file>` / Windows: `certutil -hashfile <file> SHA256`
@@ -219,12 +219,12 @@ Mac にすでに保存されているローカルの使用量記録だけを読�
 
 **整合性確認(SHA-256)**
 
-v1.16.0 の値です。[チェックサムファイル](https://github.com/bmminky/potatoken-hub/releases/download/v1.16.0/SHA256SUMS-1.16.0.txt)もリリースに含まれます。
+v1.17.0 の値です。[チェックサムファイル](https://github.com/bmminky/potatoken-hub/releases/download/v1.17.0/SHA256SUMS-1.17.0.txt)もリリースに含まれます。
 
 ```
-af993eec1e916bfa3c3e08413b946e82c924d18b031d401040d6705591c83fc3  potatoken-hub-1.16.0-macOS-arm64.dmg
-f11172fe2384e0225d4a5842a56992e021b494e8118440a33b9338ef787e636b  potatoken-hub-1.16.0-macOS-arm64.zip
-e040bd8621c55899008e8ed551fcf3ac19b5168229d7e9101024bd5fcd7f3538  potatoken-hub-1.16.0-windows-x64.zip
+c9075ad2abd44de481addacb324724da62a1ac9b7d9474cccc862e05283903f9  potatoken-hub-1.17.0-macOS-arm64.dmg
+b32c3318f50219c67b0a4cd28c96193a00277cf3aebbc990f8945649b29f4a83  potatoken-hub-1.17.0-macOS-arm64.zip
+7ec112b501775e60c688ad9f794848d49265f793644a31a1673cb3510ef94c80  potatoken-hub-1.17.0-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 ファイル名` / Windows: `certutil -hashfile ファイル名 SHA256`
@@ -314,12 +314,12 @@ OpenAI、Anthropic とは無関係の個人プロジェクトです。
 
 **完整性校验(SHA-256)**
 
-以下为 v1.16.0 的值。[校验和文件](https://github.com/bmminky/potatoken-hub/releases/download/v1.16.0/SHA256SUMS-1.16.0.txt)也包含在发行版中。
+以下为 v1.17.0 的值。[校验和文件](https://github.com/bmminky/potatoken-hub/releases/download/v1.17.0/SHA256SUMS-1.17.0.txt)也包含在发行版中。
 
 ```
-af993eec1e916bfa3c3e08413b946e82c924d18b031d401040d6705591c83fc3  potatoken-hub-1.16.0-macOS-arm64.dmg
-f11172fe2384e0225d4a5842a56992e021b494e8118440a33b9338ef787e636b  potatoken-hub-1.16.0-macOS-arm64.zip
-e040bd8621c55899008e8ed551fcf3ac19b5168229d7e9101024bd5fcd7f3538  potatoken-hub-1.16.0-windows-x64.zip
+c9075ad2abd44de481addacb324724da62a1ac9b7d9474cccc862e05283903f9  potatoken-hub-1.17.0-macOS-arm64.dmg
+b32c3318f50219c67b0a4cd28c96193a00277cf3aebbc990f8945649b29f4a83  potatoken-hub-1.17.0-macOS-arm64.zip
+7ec112b501775e60c688ad9f794848d49265f793644a31a1673cb3510ef94c80  potatoken-hub-1.17.0-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 文件名` / Windows: `certutil -hashfile 文件名 SHA256`
