@@ -6,9 +6,9 @@ Claude와 Codex의 남은 사용량을 macOS 메뉴바에서 보여주는 로컬
 
 ## 스크린샷
 
-| 메뉴바 | 소형 창 | 대형 창 |
-|---|---|---|
-| ![menu bar](Resources/Screenshots/menu-bar.jpg) | ![small panel](Resources/Screenshots/small-panel.jpg) | ![large panel](Resources/Screenshots/large-panel.jpg) |
+| 소형 창 | 대형 창 |
+|---|---|
+| ![small panel](Resources/Screenshots/small-panel.jpg) | ![large panel](Resources/Screenshots/large-panel.jpg) |
 
 ---
 
