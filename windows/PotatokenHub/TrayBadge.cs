@@ -41,12 +41,21 @@ public static class TrayBadge
 
             if (segments.Count == 1)
             {
-                DrawRow(g, y: 4, value: segments[0].Remaining, color: ColorFor(segments[0].Provider));
+                // With one provider enabled, do not leave half the tray slot
+                // empty. The percentage gets the entire icon and scales up to
+                // the largest bold size that still fits values such as 100.
+                DrawValue(g, new Rectangle(0, -1, Size, Size + 2),
+                    segments[0].Remaining, ColorFor(segments[0].Provider), 15f);
             }
             else
             {
-                DrawRow(g, y: 0, value: segments[0].Remaining, color: ColorFor(segments[0].Provider));
-                DrawRow(g, y: 8, value: segments[1].Remaining, color: ColorFor(segments[1].Provider));
+                // Deliberately overlap each row by one pixel. This gives each
+                // number a 9px-tall drawing area rather than two cramped 8px
+                // boxes, while keeping the pair visually centred in 16px.
+                DrawValue(g, new Rectangle(0, -1, Size, 10),
+                    segments[0].Remaining, ColorFor(segments[0].Provider), 11f);
+                DrawValue(g, new Rectangle(0, 7, Size, 10),
+                    segments[1].Remaining, ColorFor(segments[1].Provider), 11f);
             }
         }
 
@@ -70,29 +79,39 @@ public static class TrayBadge
         : Color.FromArgb(0xBD, 0xBD, 0xC4);
 
     /// <summary>
-    /// One provider's number, filling its half of the slot.
+    /// Draws one bold value at the largest font size that fits its slot.
     ///
     /// The colour is the provider's own — Claude orange, Codex grey — and does
     /// not track usage. With two bare numbers stacked and nothing else to tell
     /// them apart, the colour is carrying the identity, so it has to stay put.
     /// </summary>
-    private static void DrawRow(Graphics g, int y, double? value, Color color)
+    private static void DrawValue(Graphics g, Rectangle bounds, double? value, Color color, float preferredSize)
     {
         var text = value is { } v ? ((int)v).ToString() : "—";
+        const System.Windows.Forms.TextFormatFlags flags =
+            System.Windows.Forms.TextFormatFlags.HorizontalCenter |
+            System.Windows.Forms.TextFormatFlags.VerticalCenter |
+            System.Windows.Forms.TextFormatFlags.SingleLine |
+            System.Windows.Forms.TextFormatFlags.NoPadding |
+            System.Windows.Forms.TextFormatFlags.NoPrefix;
 
-        // No accent stripe and no percent sign: at 16px a tray slot has room
-        // for the digits or for decoration, not both, and the digits are the
-        // part being read. Dropping the stripe also buys the glyphs the full
-        // width, so they can be set larger.
-        using var valueFont = new Font("Segoe UI", 10f, FontStyle.Bold, GraphicsUnit.Pixel);
-        using var valueBrush = new SolidBrush(color);
-        using var format = new StringFormat(StringFormat.GenericTypographic)
+        // Arial Bold remains visibly heavier than the default Segoe UI at this
+        // extremely small size. Fit each value independently so 100 never gets
+        // clipped while ordinary one- and two-digit values use all available
+        // space.
+        for (var size = preferredSize; size >= 6f; size -= 0.5f)
         {
-            Alignment = StringAlignment.Center,
-            LineAlignment = StringAlignment.Center,
-            FormatFlags = StringFormatFlags.NoWrap,
-        };
-        g.DrawString(text, valueFont, valueBrush, new RectangleF(0, y, Size, 8), format);
+            using var font = new Font("Arial", size, FontStyle.Bold, GraphicsUnit.Pixel);
+            var measured = System.Windows.Forms.TextRenderer.MeasureText(text, font, bounds.Size, flags);
+            if (measured.Width > bounds.Width || measured.Height > bounds.Height) continue;
+
+            System.Windows.Forms.TextRenderer.DrawText(g, text, font, bounds, color, flags);
+            return;
+        }
+
+        // Defensive fallback for an unexpected font-metrics environment.
+        using var fallback = new Font("Arial", 6f, FontStyle.Bold, GraphicsUnit.Pixel);
+        System.Windows.Forms.TextRenderer.DrawText(g, text, fallback, bounds, color, flags);
     }
 
     public static string Tooltip(IReadOnlyList<ProviderSnapshot> snapshots)
