@@ -30,14 +30,11 @@ Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계�
 
 **무결성 확인 (SHA-256)**
 
-v1.18.0 배포 파일의 값입니다. [체크섬 파일](https://github.com/bmminky/potatoken-hub/releases/download/v1.18.0/SHA256SUMS-1.18.0.txt)도 함께 제공합니다.
+macOS는 v1.19.1, Windows는 v1.20.0 배포 파일의 값입니다. [체크섬 파일](https://github.com/bmminky/potatoken-hub/releases/download/v1.20.0/SHA256SUMS-1.20.0.txt)도 함께 제공합니다.
 
 ```
-7a4390cab793fbb126203b730e78c08810aa55b9743a563566e5d720f1997bf6  potatoken-hub-1.18.0-macOS-arm64.dmg
-c59cf6c5321fd951c4ec4f6363c2f1052a46ff2dadc9099047a3bd40d9456126  potatoken-hub-1.18.0-macOS-arm64.zip
-cb40a541f28f1c650b45c28a79df16537a00c38f82a2a8f19334652e09b89dcd  potatoken-hub-1.18.0-macOS-x86_64.dmg
-0f606ddd4ebe951212f921bcb4268201b94759dd99985688e2a5f2a5689b0db6  potatoken-hub-1.18.0-macOS-x86_64.zip
-1435d96ce69bd8e6428e16f77bacad7cb239a55df8529abbaf9f99c971c06580  potatoken-hub-1.18.0-windows-x64.zip
+18c0abe1e82f6b256bc323a702c567721c6efd9192c5009ce205210100878344  potatoken-hub-1.19.1-macOS-arm64.zip
+dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 파일명` / Windows: `certutil -hashfile 파일명 SHA256`
@@ -128,14 +125,11 @@ Signing notice: this build is ad-hoc signed and not notarized by Apple (a person
 
 **Integrity check (SHA-256)**
 
-Values for v1.18.0. The [checksum file](https://github.com/bmminky/potatoken-hub/releases/download/v1.18.0/SHA256SUMS-1.18.0.txt) is included with the release.
+Values for macOS v1.19.1 and Windows v1.20.0. The [checksum file](https://github.com/bmminky/potatoken-hub/releases/download/v1.20.0/SHA256SUMS-1.20.0.txt) is included with the release.
 
 ```
-7a4390cab793fbb126203b730e78c08810aa55b9743a563566e5d720f1997bf6  potatoken-hub-1.18.0-macOS-arm64.dmg
-c59cf6c5321fd951c4ec4f6363c2f1052a46ff2dadc9099047a3bd40d9456126  potatoken-hub-1.18.0-macOS-arm64.zip
-cb40a541f28f1c650b45c28a79df16537a00c38f82a2a8f19334652e09b89dcd  potatoken-hub-1.18.0-macOS-x86_64.dmg
-0f606ddd4ebe951212f921bcb4268201b94759dd99985688e2a5f2a5689b0db6  potatoken-hub-1.18.0-macOS-x86_64.zip
-1435d96ce69bd8e6428e16f77bacad7cb239a55df8529abbaf9f99c971c06580  potatoken-hub-1.18.0-windows-x64.zip
+18c0abe1e82f6b256bc323a702c567721c6efd9192c5009ce205210100878344  potatoken-hub-1.19.1-macOS-arm64.zip
+dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 <file>` / Windows: `certutil -hashfile <file> SHA256`
@@ -223,14 +217,11 @@ Mac にすでに保存されているローカルの使用量記録だけを読�
 
 **整合性確認(SHA-256)**
 
-v1.18.0 の値です。[チェックサムファイル](https://github.com/bmminky/potatoken-hub/releases/download/v1.18.0/SHA256SUMS-1.18.0.txt)もリリースに含まれます。
+macOS は v1.19.1、Windows は v1.20.0 の値です。[チェックサムファイル](https://github.com/bmminky/potatoken-hub/releases/download/v1.20.0/SHA256SUMS-1.20.0.txt)もリリースに含まれます。
 
 ```
-7a4390cab793fbb126203b730e78c08810aa55b9743a563566e5d720f1997bf6  potatoken-hub-1.18.0-macOS-arm64.dmg
-c59cf6c5321fd951c4ec4f6363c2f1052a46ff2dadc9099047a3bd40d9456126  potatoken-hub-1.18.0-macOS-arm64.zip
-cb40a541f28f1c650b45c28a79df16537a00c38f82a2a8f19334652e09b89dcd  potatoken-hub-1.18.0-macOS-x86_64.dmg
-0f606ddd4ebe951212f921bcb4268201b94759dd99985688e2a5f2a5689b0db6  potatoken-hub-1.18.0-macOS-x86_64.zip
-1435d96ce69bd8e6428e16f77bacad7cb239a55df8529abbaf9f99c971c06580  potatoken-hub-1.18.0-windows-x64.zip
+18c0abe1e82f6b256bc323a702c567721c6efd9192c5009ce205210100878344  potatoken-hub-1.19.1-macOS-arm64.zip
+dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 ファイル名` / Windows: `certutil -hashfile ファイル名 SHA256`
@@ -320,14 +311,11 @@ OpenAI、Anthropic とは無関係の個人プロジェクトです。
 
 **完整性校验(SHA-256)**
 
-以下为 v1.18.0 的值。[校验和文件](https://github.com/bmminky/potatoken-hub/releases/download/v1.18.0/SHA256SUMS-1.18.0.txt)也包含在发行版中。
+以下为 macOS v1.19.1 与 Windows v1.20.0 的值。[校验和文件](https://github.com/bmminky/potatoken-hub/releases/download/v1.20.0/SHA256SUMS-1.20.0.txt)也包含在发行版中。
 
 ```
-7a4390cab793fbb126203b730e78c08810aa55b9743a563566e5d720f1997bf6  potatoken-hub-1.18.0-macOS-arm64.dmg
-c59cf6c5321fd951c4ec4f6363c2f1052a46ff2dadc9099047a3bd40d9456126  potatoken-hub-1.18.0-macOS-arm64.zip
-cb40a541f28f1c650b45c28a79df16537a00c38f82a2a8f19334652e09b89dcd  potatoken-hub-1.18.0-macOS-x86_64.dmg
-0f606ddd4ebe951212f921bcb4268201b94759dd99985688e2a5f2a5689b0db6  potatoken-hub-1.18.0-macOS-x86_64.zip
-1435d96ce69bd8e6428e16f77bacad7cb239a55df8529abbaf9f99c971c06580  potatoken-hub-1.18.0-windows-x64.zip
+18c0abe1e82f6b256bc323a702c567721c6efd9192c5009ce205210100878344  potatoken-hub-1.19.1-macOS-arm64.zip
+dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 文件名` / Windows: `certutil -hashfile 文件名 SHA256`
