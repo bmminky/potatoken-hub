@@ -15,10 +15,15 @@ enum AboutPanel {
         // Without this the panel opens behind whatever is in front: an
         // LSUIElement app isn't in the foreground when its menu item fires.
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.orderFrontStandardAboutPanel(options: [
+        var options: [NSApplication.AboutPanelOptionKey: Any] = [
             .applicationName: appName,
             .credits: credits,
-        ])
+        ]
+        if let icon = Bundle.main.url(forResource: "AppIcon", withExtension: "icns")
+            .flatMap(NSImage.init(contentsOf:)) {
+            options[.applicationIcon] = icon
+        }
+        NSApp.orderFrontStandardAboutPanel(options: options)
     }
 
     private static var credits: NSAttributedString {
