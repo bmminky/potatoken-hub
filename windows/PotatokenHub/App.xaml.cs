@@ -49,11 +49,11 @@ public partial class App : Application
         if (_panel.IsVisible)
         {
             _panel.PersistPlacement();
-            _panel.Hide();
+            _panel.HideAnimated();
         }
         else
         {
-            _panel.Show();
+            _panel.ShowAnimated();
             _panel.Activate();
         }
     }
@@ -87,7 +87,7 @@ public partial class App : Application
         menu.Items.Add(L.T(ko: "새로고침", en: "Refresh", ja: "更新", zh: "刷新"), null,
             (_, _) => _model.Refresh());
         menu.Items.Add(L.T(ko: "숨기기", en: "Hide", ja: "隠す", zh: "隐藏"), null,
-            (_, _) => { _panel.PersistPlacement(); _panel.Hide(); });
+            (_, _) => { _panel.PersistPlacement(); _panel.HideAnimated(); });
 
         menu.Items.Add(new ToolStripSeparator());
 
@@ -150,7 +150,7 @@ public partial class App : Application
             {
                 // Show the panel first, so picking a size from the tray also
                 // brings it back when it's hidden.
-                if (!_panel.IsVisible) _panel.Show();
+                if (!_panel.IsVisible) _panel.ShowAnimated();
                 _panel.ApplyPreset(preset);
             })
             { Checked = _panel.ActivePreset == preset };

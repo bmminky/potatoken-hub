@@ -14,8 +14,8 @@ namespace PotatokenHub;
 /// </summary>
 public static class TrayBadge
 {
-    // Windows normally displays a tray slot at 16 logical pixels. Drawing a
-    // 32px bitmap made Windows shrink the already-small text a second time.
+    // The shell's standard tray slot is 16px. Render at that exact size so it
+    // does not shrink the already tiny two-line values a second time.
     private const int Size = 16;
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -41,21 +41,18 @@ public static class TrayBadge
 
             if (segments.Count == 1)
             {
-                // With one provider enabled, do not leave half the tray slot
-                // empty. The percentage gets the entire icon and scales up to
-                // the largest bold size that still fits values such as 100.
+                // With one provider enabled, give the value the entire icon.
                 DrawValue(g, new Rectangle(0, -1, Size, Size + 2),
-                    segments[0].Remaining, ColorFor(segments[0].Provider), 15f);
+                    segments[0].Remaining, ColorFor(segments[0].Provider), 16f);
             }
             else
             {
-                // Deliberately overlap each row by one pixel. This gives each
-                // number a 9px-tall drawing area rather than two cramped 8px
-                // boxes, while keeping the pair visually centred in 16px.
+                // Overlap by one pixel so each value gets a 10px-tall drawing
+                // area instead of two cramped 8px rows.
                 DrawValue(g, new Rectangle(0, -1, Size, 10),
-                    segments[0].Remaining, ColorFor(segments[0].Provider), 11f);
+                    segments[0].Remaining, ColorFor(segments[0].Provider), 13f);
                 DrawValue(g, new Rectangle(0, 7, Size, 10),
-                    segments[1].Remaining, ColorFor(segments[1].Provider), 11f);
+                    segments[1].Remaining, ColorFor(segments[1].Provider), 13f);
             }
         }
 
@@ -95,13 +92,13 @@ public static class TrayBadge
             System.Windows.Forms.TextFormatFlags.NoPadding |
             System.Windows.Forms.TextFormatFlags.NoPrefix;
 
-        // Arial Bold remains visibly heavier than the default Segoe UI at this
-        // extremely small size. Fit each value independently so 100 never gets
-        // clipped while ordinary one- and two-digit values use all available
-        // space.
+        // Arial Black keeps a wider counter and clearer digit shapes than the
+        // condensed Impact face at the tray slot's native resolution.
+        // Fit each value independently so 100 never gets clipped while
+        // ordinary one- and two-digit values fill their space.
         for (var size = preferredSize; size >= 6f; size -= 0.5f)
         {
-            using var font = new Font("Arial", size, FontStyle.Bold, GraphicsUnit.Pixel);
+            using var font = new Font("Arial Black", size, FontStyle.Regular, GraphicsUnit.Pixel);
             var measured = System.Windows.Forms.TextRenderer.MeasureText(text, font, bounds.Size, flags);
             if (measured.Width > bounds.Width || measured.Height > bounds.Height) continue;
 
@@ -110,7 +107,7 @@ public static class TrayBadge
         }
 
         // Defensive fallback for an unexpected font-metrics environment.
-        using var fallback = new Font("Arial", 6f, FontStyle.Bold, GraphicsUnit.Pixel);
+        using var fallback = new Font("Arial Black", 6f, FontStyle.Regular, GraphicsUnit.Pixel);
         System.Windows.Forms.TextRenderer.DrawText(g, text, fallback, bounds, color, flags);
     }
 

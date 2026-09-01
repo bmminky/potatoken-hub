@@ -98,24 +98,65 @@ public partial class PanelWindow : Window
         SizeChanged += (_, _) => Render();
         MouseRightButtonUp += (_, e) => { e.Handled = true; RightClicked?.Invoke(); };
         MouseLeftButtonDown += OnLeftButtonDown;
-        Closing += (_, e) => { e.Cancel = true; Hide(); };
+        Closing += (_, e) => { e.Cancel = true; HideAnimated(); };
 
         Render();
     }
 
+    /// <summary>
+    /// Fades and pops the panel in, matching potatus hub's presentation
+    /// animation (same easing, scale, and duration).
+    /// </summary>
+    public void ShowAnimated()
+    {
+        if (IsVisible) return;
+        Opacity = 0;
+        Card.RenderTransform = new ScaleTransform(0.92, 0.92);
+        Show();
+        AnimatePresentation(1, 1, hideAfter: false);
+    }
+
+    public void HideAnimated()
+    {
+        if (!IsVisible) return;
+        AnimatePresentation(0, 0.94, hideAfter: true);
+    }
+
+    private void AnimatePresentation(double opacity, double scale, bool hideAfter)
+    {
+        var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
+        var duration = TimeSpan.FromMilliseconds(190);
+        var opacityAnimation = new DoubleAnimation(opacity, duration) { EasingFunction = ease };
+        if (hideAfter) opacityAnimation.Completed += (_, _) => Hide();
+        BeginAnimation(OpacityProperty, opacityAnimation);
+
+        var transform = Card.RenderTransform as ScaleTransform ?? new ScaleTransform(1, 1);
+        Card.RenderTransform = transform;
+        transform.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(scale, duration) { EasingFunction = ease });
+        transform.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(scale, duration) { EasingFunction = ease });
+    }
+
     private void RestorePosition()
     {
-        var area = SystemParameters.WorkArea;
         if (Settings.PanelPosition is { } position)
         {
+            var area = WorkAreaFor(new Point(position.Left + Width / 2, position.Top + Height / 2));
             Left = Math.Clamp(position.Left, area.Left, Math.Max(area.Left, area.Right - Width));
             Top = Math.Clamp(position.Top, area.Top, Math.Max(area.Top, area.Bottom - Height));
         }
         else
         {
+            var area = SystemParameters.WorkArea;
             Left = area.Right - Width - 16;
             Top = area.Top + 16;
         }
+    }
+
+    private static Rect WorkAreaFor(Point point)
+    {
+        var area = System.Windows.Forms.Screen.FromPoint(
+            new System.Drawing.Point((int)Math.Round(point.X), (int)Math.Round(point.Y))).WorkingArea;
+        return new Rect(area.Left, area.Top, area.Width, area.Height);
     }
 
     public void PersistPlacement()
@@ -178,57 +219,48 @@ public partial class PanelWindow : Window
     }
 
     /// <summary>
-    /// BackEase gives the overshoot-and-settle the macOS build hand-rolls with a
-    /// damped oscillation; WPF drives it on the compositor rather than a timer.
+    /// Moves to the target size/position instantly, then fakes the
+    /// grow/shrink motion with a scale transform on the card instead of
+    /// animating the window's own size. Same technique and values as
+    /// potatus hub's double-click size toggle: with fixed-pixel content
+    /// inside, animating the window's Width/Height directly leaves newly
+    /// revealed content clipped by the still-old, smaller frame until the
+    /// animation catches up. Scaling a card that's already at its final
+    /// window bounds never has that problem.
     /// </summary>
     private void AnimateTo(Size target)
     {
-        var ease = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 };
-        var duration = new Duration(TimeSpan.FromMilliseconds(340));
+        var oldWidth = Width;
+        var oldHeight = Height;
 
-        // Width alone grows from the left edge, which throws the card to the
-        // right as it expands. Move the left edge by half the difference so the
-        // panel changes tier around its own centre, the way the macOS build
-        // does. The top edge stays put, so it grows downward.
+        // Keep the same centre point on both axes while changing tiers.
         var targetLeft = Left + (Width - target.Width) / 2;
-        var area = SystemParameters.WorkArea;
+        var targetTop = Top + (Height - target.Height) / 2;
+        var area = WorkAreaFor(new Point(Left + Width / 2, Top + Height / 2));
         targetLeft = Math.Clamp(targetLeft, area.Left, Math.Max(area.Left, area.Right - target.Width));
+        targetTop = Math.Clamp(targetTop, area.Top, Math.Max(area.Top, area.Bottom - target.Height));
 
         _isPerformingOwnResize = true;
-        Animate(LeftProperty, targetLeft, ease, duration);
-        Animate(HeightProperty, target.Height, ease, duration);
-        Animate(WidthProperty, target.Width, ease, duration, onCompleted: () => _isPerformingOwnResize = false);
-    }
+        Left = targetLeft;
+        Top = targetTop;
+        Width = target.Width;
+        Height = target.Height;
 
-    /// <summary>
-    /// Animates one property and then hands it back.
-    ///
-    /// A finished animation normally keeps hold of its property, and anything
-    /// that assigns to it afterwards is silently ignored. That matters here
-    /// because DragMove writes Left and the DPI guard writes Width and Height —
-    /// left held, the panel would animate once and then refuse to be moved or
-    /// corrected. Stopping the animation and writing the final value by hand
-    /// releases the property while landing on the same number.
-    /// </summary>
-    private void Animate(
-        DependencyProperty property,
-        double to,
-        IEasingFunction ease,
-        Duration duration,
-        Action? onCompleted = null)
-    {
-        var animation = new DoubleAnimation(to, duration)
+        if (oldWidth <= 0 || oldHeight <= 0)
         {
-            EasingFunction = ease,
-            FillBehavior = FillBehavior.Stop,
-        };
-        animation.Completed += (_, _) =>
-        {
-            BeginAnimation(property, null);
-            SetValue(property, to);
-            onCompleted?.Invoke();
-        };
-        BeginAnimation(property, animation);
+            _isPerformingOwnResize = false;
+            return;
+        }
+
+        Card.RenderTransformOrigin = new Point(0.5, 0.5);
+        var transform = new ScaleTransform(oldWidth / target.Width, oldHeight / target.Height);
+        Card.RenderTransform = transform;
+        var ease = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 };
+        var duration = TimeSpan.FromMilliseconds(340);
+        var scaleY = new DoubleAnimation(1, duration) { EasingFunction = ease };
+        scaleY.Completed += (_, _) => _isPerformingOwnResize = false;
+        transform.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(1, duration) { EasingFunction = ease });
+        transform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleY);
     }
 
     private void OnRefreshClick(object sender, RoutedEventArgs e) => _model.Refresh();
