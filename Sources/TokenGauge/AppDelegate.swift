@@ -95,6 +95,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: ContentView(model: model, largeSize: largeSize, onHide: { [weak self] in self?.closePanel() })
                 .background(.regularMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                // Replaces the window's own shadow (see FloatingPanel), which
+                // was cast from the rectangular window frame rather than this
+                // rounded shape and showed as a hard dark ring at the corners.
+                .shadow(color: .black.opacity(0.35), radius: 10, y: 3)
                 // The hidden-but-present title bar contributes a top safe area
                 // inset, which otherwise shrinks the SwiftUI layout (and the
                 // GeometryReader size the tier check reads) by ~32pt versus the

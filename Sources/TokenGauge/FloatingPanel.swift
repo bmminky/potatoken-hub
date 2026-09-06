@@ -36,7 +36,12 @@ final class FloatingPanel: NSWindow {
         self.contentViewController = contentViewController
         isOpaque = false
         backgroundColor = .clear
-        hasShadow = true
+        // AppKit's own window shadow is cast from the window's rectangular
+        // alpha mask, not the SwiftUI content's rounded clip — against a
+        // busy/textured wallpaper that mismatch reads as a hard dark ring
+        // right at the rounded corners. A soft shadow drawn in SwiftUI
+        // (see ContentView) follows the actual rounded shape instead.
+        hasShadow = false
         level = .floating
         isMovableByWindowBackground = true
         isReleasedWhenClosed = false

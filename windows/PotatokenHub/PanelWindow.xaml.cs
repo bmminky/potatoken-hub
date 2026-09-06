@@ -624,25 +624,37 @@ internal sealed class NestedGaugeBar : FrameworkElement
     protected override void OnRender(DrawingContext drawingContext)
     {
         base.OnRender(drawingContext);
+        if (ActualWidth <= 0 || ActualHeight <= 0) return;
+
         var radius = ActualHeight / 2;
-        DrawFill(drawingContext, TrackBrush, ActualWidth, radius);
+        DrawFill(drawingContext, TrackBrush, 0, ActualWidth, radius);
+
+        // Half the track height — exactly enough to tuck the underneath bar's
+        // own rounded left cap under the top bar's, whichever one that is. Two
+        // rounded rects stacked at the same left edge each anti-alias their
+        // left cap independently, and the curves don't quite coincide at the
+        // tip — a sliver of whichever is underneath shows through. Starting
+        // the underneath bar's cap this far inside the top bar removes the
+        // overlap entirely rather than relying on the two edges lining up
+        // pixel-for-pixel.
+        var capInset = radius;
 
         if (_baseFraction >= _overlayFraction)
         {
-            DrawFill(drawingContext, _baseBrush, ActualWidth * _baseFraction, radius);
-            DrawFill(drawingContext, _overlayBrush, ActualWidth * _overlayFraction, radius);
+            DrawFill(drawingContext, _baseBrush, capInset, Math.Max(ActualWidth * _baseFraction - capInset, 0), radius);
+            DrawFill(drawingContext, _overlayBrush, 0, ActualWidth * _overlayFraction, radius);
         }
         else
         {
-            DrawFill(drawingContext, _overlayBrush, ActualWidth * _overlayFraction, radius);
-            DrawFill(drawingContext, _baseBrush, ActualWidth * _baseFraction, radius);
+            DrawFill(drawingContext, _overlayBrush, capInset, Math.Max(ActualWidth * _overlayFraction - capInset, 0), radius);
+            DrawFill(drawingContext, _baseBrush, 0, ActualWidth * _baseFraction, radius);
         }
     }
 
-    private void DrawFill(DrawingContext context, Brush brush, double width, double radius)
+    private void DrawFill(DrawingContext context, Brush brush, double x, double width, double radius)
     {
-        if (width <= 0 || ActualHeight <= 0) return;
-        context.DrawRoundedRectangle(brush, null, new Rect(0, 0, width, ActualHeight), radius, radius);
+        if (width <= 0) return;
+        context.DrawRoundedRectangle(brush, null, new Rect(x, 0, width, ActualHeight), radius, radius);
     }
 
     private static double Fraction(double? remaining) =>

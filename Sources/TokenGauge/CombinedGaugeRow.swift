@@ -108,19 +108,31 @@ struct NestedUsageBar: View {
         GeometryReader { geo in
             let baseWidth = geo.size.width * fraction(base)
             let overlayWidth = geo.size.width * fraction(overlay)
+            // Half the track height — exactly enough to tuck the underneath
+            // bar's own rounded left cap under the top bar's, whichever one
+            // that is. Two capsules stacked at the same leading edge each
+            // anti-alias their left cap independently, and the curves don't
+            // quite coincide — a sliver of whichever is underneath shows
+            // through right at the tip. Starting the underneath bar's cap
+            // this far inside the top bar removes the overlap entirely rather
+            // than relying on the two edges lining up pixel-for-pixel.
+            let capInset = height / 2
 
             ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.gray.opacity(0.2))
+                Capsule().fill(Color.gray.opacity(0.2))
 
                 // Longer bar first so the shorter one lands on top of it and
                 // neither can be swallowed: whichever window is tighter is the
                 // one the user needs to see.
                 if fraction(base) >= fraction(overlay) {
-                    Capsule().fill(baseColor).frame(width: baseWidth)
+                    Capsule().fill(baseColor)
+                        .frame(width: max(baseWidth - capInset, 0))
+                        .offset(x: capInset)
                     Capsule().fill(overlayColor).frame(width: overlayWidth)
                 } else {
-                    Capsule().fill(overlayColor).frame(width: overlayWidth)
+                    Capsule().fill(overlayColor)
+                        .frame(width: max(overlayWidth - capInset, 0))
+                        .offset(x: capInset)
                     Capsule().fill(baseColor).frame(width: baseWidth)
                 }
             }
