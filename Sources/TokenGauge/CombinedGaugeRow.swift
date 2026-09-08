@@ -102,21 +102,14 @@ struct NestedUsageBar: View {
     let height: CGFloat
 
     var body: some View {
-        // Filled by real width, not by scaling a full-width capsule
-        // horizontally: scaling squashes the rounded caps along with the
-        // body, so a short bar ends up with flattened, angular ends.
+        // The outer capsule owns the leading round cap for both fills. Giving
+        // each nested bar its own leading capsule cap lets their anti-aliased
+        // pixels mix, which produces a visible coloured sliver at x = 0.
+        // Each fill starts flat just outside the track and is clipped once by
+        // that shared outer capsule instead.
         GeometryReader { geo in
             let baseWidth = geo.size.width * fraction(base)
             let overlayWidth = geo.size.width * fraction(overlay)
-            // Half the track height — exactly enough to tuck the underneath
-            // bar's own rounded left cap under the top bar's, whichever one
-            // that is. Two capsules stacked at the same leading edge each
-            // anti-alias their left cap independently, and the curves don't
-            // quite coincide — a sliver of whichever is underneath shows
-            // through right at the tip. Starting the underneath bar's cap
-            // this far inside the top bar removes the overlap entirely rather
-            // than relying on the two edges lining up pixel-for-pixel.
-            let capInset = height / 2
 
             ZStack(alignment: .leading) {
                 Capsule().fill(Color.gray.opacity(0.2))
@@ -125,19 +118,29 @@ struct NestedUsageBar: View {
                 // neither can be swallowed: whichever window is tighter is the
                 // one the user needs to see.
                 if fraction(base) >= fraction(overlay) {
-                    Capsule().fill(baseColor)
-                        .frame(width: max(baseWidth - capInset, 0))
-                        .offset(x: capInset)
-                    Capsule().fill(overlayColor).frame(width: overlayWidth)
+                    leadingFill(width: baseWidth, color: baseColor)
+                    leadingFill(width: overlayWidth, color: overlayColor)
                 } else {
-                    Capsule().fill(overlayColor)
-                        .frame(width: max(overlayWidth - capInset, 0))
-                        .offset(x: capInset)
-                    Capsule().fill(baseColor).frame(width: baseWidth)
+                    leadingFill(width: overlayWidth, color: overlayColor)
+                    leadingFill(width: baseWidth, color: baseColor)
                 }
             }
+            .clipShape(Capsule())
         }
         .frame(height: height)
+    }
+
+    @ViewBuilder
+    private func leadingFill(width: CGFloat, color: Color) -> some View {
+        if width > 0 {
+            // Extending by half a height lets the trailing capsule cap finish
+            // at exactly `width`, while the leading cap stays outside the
+            // shared clip and therefore cannot overlap another fill.
+            Capsule()
+                .fill(color)
+                .frame(width: width + height / 2)
+                .offset(x: -height / 2)
+        }
     }
 
     private func fraction(_ window: UsageWindow) -> CGFloat {
