@@ -41,18 +41,21 @@ struct FullContent: View {
         VStack(alignment: .leading, spacing: 12) {
             if snapshots.isEmpty {
                 EmptyProvidersView()
+                    .overlay(WindowDragSurface())
             } else {
                 ForEach(Array(snapshots.enumerated()), id: \.element.provider) { index, snapshot in
-                    if index > 0 { Divider() }
+                    if index > 0 { Divider().allowsHitTesting(false) }
                     providerSection(snapshot: snapshot)
+                        .overlay(WindowDragSurface())
                 }
             }
-            Divider()
+            Divider().allowsHitTesting(false)
             FooterView(model: model, onHide: onHide)
         }
         .padding(.horizontal, 16)
         .padding(.top, 16)
         .padding(.bottom, bottomPadding)
+        .background(WindowDragSurface())
     }
 
     @ViewBuilder
@@ -115,6 +118,7 @@ struct MinimalContent: View {
         .padding(.horizontal, 8)
         .padding(.top, 8)
         .padding(.bottom, bottomPadding)
+        .overlay(WindowDragSurface())
     }
 }
 
@@ -212,19 +216,22 @@ private struct FooterView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            if let lastUpdated = model.lastUpdated {
-                let time = Self.updateTimeFormatter.string(from: lastUpdated)
-                Text(L.t(
-                    ko: "업데이트 \(time)",
-                    en: "Updated \(time)",
-                    ja: "更新 \(time)",
-                    zh: "更新于 \(time)"
-                ))
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            HStack(spacing: 0) {
+                if let lastUpdated = model.lastUpdated {
+                    let time = Self.updateTimeFormatter.string(from: lastUpdated)
+                    Text(L.t(
+                        ko: "업데이트 \(time)",
+                        en: "Updated \(time)",
+                        ja: "更新 \(time)",
+                        zh: "更新于 \(time)"
+                    ))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                }
+                Spacer(minLength: 4)
             }
-            Spacer(minLength: 4)
+            .overlay(WindowDragSurface())
             Button {
                 model.refresh()
             } label: {

@@ -15,6 +15,9 @@ final class UsageModel: ObservableObject {
     private var lastClaudeMTime: Date?
     private var lastCodexMTime: Date?
     private var providerVisibility: [Provider: Bool]
+    private static let firstProviderKey = "TokenGauge.firstDisplayedProvider"
+    private(set) var firstDisplayedProvider: Provider = UserDefaults.standard
+        .string(forKey: firstProviderKey).flatMap(Provider.init(rawValue:)) ?? .claude
 
     init() {
         providerVisibility = Dictionary(
@@ -64,7 +67,15 @@ final class UsageModel: ObservableObject {
     }
 
     private func updateDisplayedProviders() {
-        displayedProviders = Provider.allCases.filter(isDisplayed)
+        let ordered = [firstDisplayedProvider] + Provider.allCases.filter { $0 != firstDisplayedProvider }
+        displayedProviders = ordered.filter(isDisplayed)
+    }
+
+    func setFirstDisplayedProvider(_ provider: Provider) {
+        guard firstDisplayedProvider != provider else { return }
+        firstDisplayedProvider = provider
+        UserDefaults.standard.set(provider.rawValue, forKey: Self.firstProviderKey)
+        updateDisplayedProviders()
     }
 
     /// Kept as label/value pairs rather than one prebuilt string so the badge

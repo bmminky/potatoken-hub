@@ -25,6 +25,7 @@ final class FloatingPanel: NSWindow {
     /// resized the panel mid-drag. A real double-click leaves the window where
     /// it was between the two clicks; a re-grab doesn't.
     private var originAtLastMouseDown: NSPoint?
+    private(set) var handledSizeToggleForCurrentClick = false
 
     init(contentViewController: NSViewController, size: NSSize) {
         super.init(
@@ -109,13 +110,17 @@ final class FloatingPanel: NSWindow {
     override func sendEvent(_ event: NSEvent) {
         if event.type == .leftMouseDown, event.eventNumber != lastHandledMouseDownEventNumber {
             lastHandledMouseDownEventNumber = event.eventNumber
+            handledSizeToggleForCurrentClick = false
             onInteractionStart?()
 
             let previousOrigin = originAtLastMouseDown
             originAtLastMouseDown = frame.origin
 
             if event.clickCount == 2,
+               let contentView,
+               contentView.hitTest(contentView.convert(event.locationInWindow, from: nil)) is WindowDragView,
                !panelMoved(since: previousOrigin) {
+                handledSizeToggleForCurrentClick = true
                 onDoubleClick?()
             }
         }

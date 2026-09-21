@@ -1,7 +1,8 @@
 import CoreGraphics
 
 enum PanelSize {
-    static let smallWidth: CGFloat = 200
+    // Match one potatus hub module's visible card width (excluding its shadow).
+    static let smallWidth: CGFloat = 160
     static let largeWidth: CGFloat = 320
 
     /// Fallback heights used only until AppDelegate measures each preset's

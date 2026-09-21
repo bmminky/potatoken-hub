@@ -561,6 +561,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(sizeMenuItem())
         menu.addItem(providerVisibilityMenuItem())
+        menu.addItem(providerOrderMenuItem())
         menu.addItem(alwaysOnTopMenuItem())
 
         let hideItem = NSMenuItem(title: L.t(ko: "숨기기", en: "Hide", ja: "隠す", zh: "隐藏"), action: #selector(hidePanel), keyEquivalent: "")
@@ -579,6 +580,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(sizeMenuItem())
         menu.addItem(providerVisibilityMenuItem())
+        menu.addItem(providerOrderMenuItem())
         menu.addItem(alwaysOnTopMenuItem())
 
         menu.addItem(.separator())
@@ -667,6 +669,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         item.submenu = providersMenu
         return item
+    }
+
+    private func providerOrderMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(
+            title: L.t(ko: "표시 순서", en: "Display Order", ja: "表示順序", zh: "显示顺序"),
+            action: nil, keyEquivalent: ""
+        )
+        let submenu = NSMenu()
+        for provider in Provider.allCases {
+            let option = NSMenuItem(
+                title: L.t(
+                    ko: "\(provider.rawValue)를 위에 표시",
+                    en: "\(provider.rawValue) on Top",
+                    ja: "\(provider.rawValue)を上に表示",
+                    zh: "\(provider.rawValue)显示在上方"
+                ),
+                action: #selector(selectFirstProvider(_:)), keyEquivalent: ""
+            )
+            option.target = self
+            option.representedObject = provider
+            option.state = model.firstDisplayedProvider == provider ? .on : .off
+            submenu.addItem(option)
+        }
+        item.submenu = submenu
+        return item
+    }
+
+    @objc private func selectFirstProvider(_ sender: NSMenuItem) {
+        guard let provider = sender.representedObject as? Provider else { return }
+        model.setFirstDisplayedProvider(provider)
     }
 
     @objc private func toggleProviderDisplayed(_ sender: NSMenuItem) {

@@ -19,7 +19,9 @@ Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계�
 
 ### 다운로드
 
-[최신 릴리즈](https://github.com/bmminky/potatoken-hub/releases/latest)에서 DMG 또는 ZIP을 받으세요. Apple Silicon은 `arm64`, Intel Mac은 `x86_64`가 표시된 파일을 선택하세요.
+[Download macOS (Apple Silicon)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/potatoken-hub-1.21.0-macOS-arm64.zip) · [Download Windows (x64, v1.20.0)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/potatoken-hub-1.20.0-windows-x64.zip)
+
+macOS 1.21.0: 게이지·글자 영역 드래그 개선, 소형창 폭 160pt, 우클릭 → 표시 순서에서 Claude/Codex 상하 순서 선택 및 저장. Windows는 기존 1.20.0 배포본입니다.
 
 1. DMG를 열고 `potatoken hub.app`을 Applications 폴더로 드래그하거나, ZIP을 풀어서 옮깁니다.
 2. 처음 실행할 때 Finder에서 `potatoken hub.app`을 **우클릭 → 열기**로 실행하세요.
@@ -30,10 +32,10 @@ Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계�
 
 **무결성 확인 (SHA-256)**
 
-macOS는 v1.19.1, Windows는 v1.20.0 배포 파일의 값입니다. [체크섬 파일](https://github.com/bmminky/potatoken-hub/releases/download/v1.20.0/SHA256SUMS-1.20.0.txt)도 함께 제공합니다.
+macOS는 v1.21.0, Windows는 v1.20.0 배포 파일의 값입니다. [체크섬 파일](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/SHA256SUMS-1.21.0.txt)도 함께 제공합니다.
 
 ```
-18c0abe1e82f6b256bc323a702c567721c6efd9192c5009ce205210100878344  potatoken-hub-1.19.1-macOS-arm64.zip
+501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
 dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
 ```
 
@@ -114,7 +116,9 @@ no analytics, no provider API keys, no network calls.
 
 ### Download
 
-Get the DMG or ZIP from the [latest release](https://github.com/bmminky/potatoken-hub/releases/latest). Choose `arm64` for Apple Silicon or `x86_64` for an Intel Mac.
+[Download macOS (Apple Silicon)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/potatoken-hub-1.21.0-macOS-arm64.zip) · [Download Windows (x64, v1.20.0)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/potatoken-hub-1.20.0-windows-x64.zip)
+
+macOS 1.21.0 adds dragging from gauges and text, a 160pt compact panel, and a saved Claude/Codex order under right-click → Display Order. Windows remains the existing 1.20.0 build.
 
 1. Open the DMG and drag `potatoken hub.app` into Applications, or unzip and move it there.
 2. On first launch, **right-click `potatoken hub.app` in Finder and choose Open**.
@@ -125,10 +129,10 @@ Signing notice: this build is ad-hoc signed and not notarized by Apple (a person
 
 **Integrity check (SHA-256)**
 
-Values for macOS v1.19.1 and Windows v1.20.0. The [checksum file](https://github.com/bmminky/potatoken-hub/releases/download/v1.20.0/SHA256SUMS-1.20.0.txt) is included with the release.
+Values for macOS v1.21.0 and Windows v1.20.0. The [checksum file](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/SHA256SUMS-1.21.0.txt) is included with the release.
 
 ```
-18c0abe1e82f6b256bc323a702c567721c6efd9192c5009ce205210100878344  potatoken-hub-1.19.1-macOS-arm64.zip
+501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
 dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
 ```
 
@@ -206,7 +210,9 @@ Mac にすでに保存されているローカルの使用量記録だけを読�
 
 ### ダウンロード
 
-[最新リリース](https://github.com/bmminky/potatoken-hub/releases/latest)から DMG または ZIP を入手してください。Apple Silicon は `arm64`、Intel Mac は `x86_64` と表示されたファイルを選んでください。
+[最新リリース](https://github.com/bmminky/potatoken-hub/releases/latest)から Apple Silicon 用 macOS ZIP を入手してください。Windows は既存の 1.20.0 です。
+
+macOS 1.21.0: ゲージと文字からのドラッグ、小型ウィンドウの幅160pt、右クリック → 表示順序で Claude/Codex の上下順序を選択・保存できます。
 
 1. DMG を開いて `potatoken hub.app` を Applications フォルダにドラッグするか、ZIP を展開して移動します。
 2. 初回起動時は Finder で `potatoken hub.app` を**右クリック → 開く**で起動してください。
@@ -217,10 +223,10 @@ Mac にすでに保存されているローカルの使用量記録だけを読�
 
 **整合性確認(SHA-256)**
 
-macOS は v1.19.1、Windows は v1.20.0 の値です。[チェックサムファイル](https://github.com/bmminky/potatoken-hub/releases/download/v1.20.0/SHA256SUMS-1.20.0.txt)もリリースに含まれます。
+macOS は v1.21.0、Windows は v1.20.0 の値です。[チェックサムファイル](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/SHA256SUMS-1.21.0.txt)もリリースに含まれます。
 
 ```
-18c0abe1e82f6b256bc323a702c567721c6efd9192c5009ce205210100878344  potatoken-hub-1.19.1-macOS-arm64.zip
+501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
 dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
 ```
 
@@ -300,7 +306,9 @@ OpenAI、Anthropic とは無関係の個人プロジェクトです。
 
 ### 下载
 
-从[最新版本](https://github.com/bmminky/potatoken-hub/releases/latest)获取 DMG 或 ZIP。Apple Silicon 请选择标有 `arm64` 的文件，Intel Mac 请选择 `x86_64`。
+从[最新版本](https://github.com/bmminky/potatoken-hub/releases/latest)下载适用于 Apple Silicon 的 macOS ZIP。Windows 仍为现有的 1.20.0。
+
+macOS 1.21.0：支持从进度条和文字区域拖动，小窗口宽度为160pt，可通过右键 → 显示顺序选择并保存 Claude/Codex 的上下顺序。
 
 1. 打开 DMG,将 `potatoken hub.app` 拖入 Applications 文件夹;或解压 ZIP 后手动移动过去。
 2. 首次启动时,在 Finder 中**右键点击 `potatoken hub.app` → 打开**。
@@ -311,10 +319,10 @@ OpenAI、Anthropic とは無関係の個人プロジェクトです。
 
 **完整性校验(SHA-256)**
 
-以下为 macOS v1.19.1 与 Windows v1.20.0 的值。[校验和文件](https://github.com/bmminky/potatoken-hub/releases/download/v1.20.0/SHA256SUMS-1.20.0.txt)也包含在发行版中。
+以下为 macOS v1.21.0 与 Windows v1.20.0 的值。[校验和文件](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/SHA256SUMS-1.21.0.txt)也包含在发行版中。
 
 ```
-18c0abe1e82f6b256bc323a702c567721c6efd9192c5009ce205210100878344  potatoken-hub-1.19.1-macOS-arm64.zip
+501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
 dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
 ```
 
