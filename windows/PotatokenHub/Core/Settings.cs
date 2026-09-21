@@ -14,6 +14,7 @@ public static class Settings
         public string? Language { get; set; }
         public string? ClaudeVisibility { get; set; }
         public string? CodexVisibility { get; set; }
+        public string? FirstDisplayedProvider { get; set; }
         public bool AlwaysOnTop { get; set; } = true;
         public double? PanelLeft { get; set; }
         public double? PanelTop { get; set; }
@@ -97,6 +98,18 @@ public static class Settings
         if (provider == Provider.Claude) Current.ClaudeVisibility = value;
         else Current.CodexVisibility = value;
         Save();
+    }
+
+    public static Provider FirstDisplayedProvider
+    {
+        get => Enum.TryParse<Provider>(Current.FirstDisplayedProvider, out var provider)
+            ? provider
+            : Provider.Claude;
+        set
+        {
+            Current.FirstDisplayedProvider = value.ToString();
+            Save();
+        }
     }
 
     public static (double Left, double Top)? PanelPosition

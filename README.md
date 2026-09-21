@@ -19,9 +19,9 @@ Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계�
 
 ### 다운로드
 
-[Download macOS (Apple Silicon)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/potatoken-hub-1.21.0-macOS-arm64.zip) · [Download Windows (x64, v1.20.0)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/potatoken-hub-1.20.0-windows-x64.zip)
+[Download macOS (Apple Silicon)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/potatoken-hub-1.21.0-macOS-arm64.zip) · [Download Windows (x64, v1.21.1)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/potatoken-hub-1.21.1-windows-x64.zip)
 
-macOS 1.21.0: 게이지·글자 영역 드래그 개선, 소형창 폭 160pt, 우클릭 → 표시 순서에서 Claude/Codex 상하 순서 선택 및 저장. Windows는 기존 1.20.0 배포본입니다.
+macOS 1.21.0: 게이지·글자 영역 드래그 개선, 소형창 폭 160pt, 우클릭 → 표시 순서에서 Claude/Codex 상하 순서 선택 및 저장. Windows 1.21.1에도 드래그 개선, 소형 카드 폭 160 DIP, 표시 순서 저장을 적용하고 Codex Spark 한도 표시를 제외했습니다.
 
 1. DMG를 열고 `potatoken hub.app`을 Applications 폴더로 드래그하거나, ZIP을 풀어서 옮깁니다.
 2. 처음 실행할 때 Finder에서 `potatoken hub.app`을 **우클릭 → 열기**로 실행하세요.
@@ -32,11 +32,11 @@ macOS 1.21.0: 게이지·글자 영역 드래그 개선, 소형창 폭 160pt, �
 
 **무결성 확인 (SHA-256)**
 
-macOS는 v1.21.0, Windows는 v1.20.0 배포 파일의 값입니다. [체크섬 파일](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/SHA256SUMS-1.21.0.txt)도 함께 제공합니다.
+macOS는 v1.21.0, Windows는 v1.21.1 배포 파일의 값입니다. [체크섬 파일](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/SHA256SUMS-1.21.1.txt)도 함께 제공합니다.
 
 ```
 501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
-dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
+f522ed1c627fd79daae3a193e2a1cebee145bb6dbbcadeeff4414f47df59c1d7  potatoken-hub-1.21.1-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 파일명` / Windows: `certutil -hashfile 파일명 SHA256`
@@ -116,9 +116,9 @@ no analytics, no provider API keys, no network calls.
 
 ### Download
 
-[Download macOS (Apple Silicon)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/potatoken-hub-1.21.0-macOS-arm64.zip) · [Download Windows (x64, v1.20.0)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/potatoken-hub-1.20.0-windows-x64.zip)
+[Download macOS (Apple Silicon)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/potatoken-hub-1.21.0-macOS-arm64.zip) · [Download Windows (x64, v1.21.1)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/potatoken-hub-1.21.1-windows-x64.zip)
 
-macOS 1.21.0 adds dragging from gauges and text, a 160pt compact panel, and a saved Claude/Codex order under right-click → Display Order. Windows remains the existing 1.20.0 build.
+macOS 1.21.0 adds dragging from gauges and text, a 160pt compact panel, and a saved Claude/Codex order under right-click → Display Order. Windows 1.21.1 brings the drag, compact width and saved display-order changes to Windows and excludes Codex Spark quotas.
 
 1. Open the DMG and drag `potatoken hub.app` into Applications, or unzip and move it there.
 2. On first launch, **right-click `potatoken hub.app` in Finder and choose Open**.
@@ -129,11 +129,11 @@ Signing notice: this build is ad-hoc signed and not notarized by Apple (a person
 
 **Integrity check (SHA-256)**
 
-Values for macOS v1.21.0 and Windows v1.20.0. The [checksum file](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/SHA256SUMS-1.21.0.txt) is included with the release.
+Values for macOS v1.21.0 and Windows v1.21.1. The [checksum file](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/SHA256SUMS-1.21.1.txt) is included with the release.
 
 ```
 501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
-dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
+f522ed1c627fd79daae3a193e2a1cebee145bb6dbbcadeeff4414f47df59c1d7  potatoken-hub-1.21.1-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 <file>` / Windows: `certutil -hashfile <file> SHA256`
@@ -210,7 +210,7 @@ Mac にすでに保存されているローカルの使用量記録だけを読�
 
 ### ダウンロード
 
-[最新リリース](https://github.com/bmminky/potatoken-hub/releases/latest)から Apple Silicon 用 macOS ZIP を入手してください。Windows は既存の 1.20.0 です。
+[最新リリース](https://github.com/bmminky/potatoken-hub/releases/latest)から Apple Silicon 用 macOS ZIP を入手してください。Windows 1.21.1 にもドラッグ改善、幅160 DIP、表示順序の保存を適用し、Codex Spark の使用量を除外しました。
 
 macOS 1.21.0: ゲージと文字からのドラッグ、小型ウィンドウの幅160pt、右クリック → 表示順序で Claude/Codex の上下順序を選択・保存できます。
 
@@ -223,11 +223,11 @@ macOS 1.21.0: ゲージと文字からのドラッグ、小型ウィンドウの
 
 **整合性確認(SHA-256)**
 
-macOS は v1.21.0、Windows は v1.20.0 の値です。[チェックサムファイル](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/SHA256SUMS-1.21.0.txt)もリリースに含まれます。
+macOS は v1.21.0、Windows は v1.21.1 の値です。[チェックサムファイル](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/SHA256SUMS-1.21.1.txt)もリリースに含まれます。
 
 ```
 501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
-dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
+f522ed1c627fd79daae3a193e2a1cebee145bb6dbbcadeeff4414f47df59c1d7  potatoken-hub-1.21.1-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 ファイル名` / Windows: `certutil -hashfile ファイル名 SHA256`
@@ -306,7 +306,7 @@ OpenAI、Anthropic とは無関係の個人プロジェクトです。
 
 ### 下载
 
-从[最新版本](https://github.com/bmminky/potatoken-hub/releases/latest)下载适用于 Apple Silicon 的 macOS ZIP。Windows 仍为现有的 1.20.0。
+从[最新版本](https://github.com/bmminky/potatoken-hub/releases/latest)下载适用于 Apple Silicon 的 macOS ZIP。Windows 1.21.1 同步了拖动、160 DIP 窗口宽度和显示顺序设置，并排除 Codex Spark 配额。
 
 macOS 1.21.0：支持从进度条和文字区域拖动，小窗口宽度为160pt，可通过右键 → 显示顺序选择并保存 Claude/Codex 的上下顺序。
 
@@ -319,11 +319,11 @@ macOS 1.21.0：支持从进度条和文字区域拖动，小窗口宽度为160pt
 
 **完整性校验(SHA-256)**
 
-以下为 macOS v1.21.0 与 Windows v1.20.0 的值。[校验和文件](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.0/SHA256SUMS-1.21.0.txt)也包含在发行版中。
+以下为 macOS v1.21.0 与 Windows v1.21.1 的值。[校验和文件](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/SHA256SUMS-1.21.1.txt)也包含在发行版中。
 
 ```
 501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
-dcd1afca63d14d8646cb9b487ab24f6e03b856378f6a5aa46226609820927685  potatoken-hub-1.20.0-windows-x64.zip
+f522ed1c627fd79daae3a193e2a1cebee145bb6dbbcadeeff4414f47df59c1d7  potatoken-hub-1.21.1-windows-x64.zip
 ```
 
 macOS: `shasum -a 256 文件名` / Windows: `certutil -hashfile 文件名 SHA256`

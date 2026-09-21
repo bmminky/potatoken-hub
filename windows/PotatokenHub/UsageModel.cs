@@ -13,6 +13,7 @@ public sealed class UsageModel : INotifyPropertyChanged
     public ProviderSnapshot Codex { get; private set; } = ProviderSnapshot.Empty(Provider.Codex);
     public DateTime? LastUpdated { get; private set; }
     public IReadOnlyList<Provider> DisplayedProviders => _displayedProviders;
+    public Provider FirstDisplayedProvider { get; private set; } = Settings.FirstDisplayedProvider;
 
     private List<Provider> _displayedProviders = [];
 
@@ -46,12 +47,21 @@ public sealed class UsageModel : INotifyPropertyChanged
 
     public bool IsDisplayed(Provider provider) => _displayedProviders.Contains(provider);
 
+    public void SetFirstDisplayedProvider(Provider provider)
+    {
+        if (FirstDisplayedProvider == provider) return;
+        FirstDisplayedProvider = provider;
+        Settings.FirstDisplayedProvider = provider;
+        UpdateDisplayedProviders();
+    }
+
     public ProviderSnapshot SnapshotFor(Provider provider) =>
         provider == Provider.Claude ? Claude : Codex;
 
     private void UpdateDisplayedProviders()
     {
-        var next = Enum.GetValues<Provider>()
+        var next = new[] { FirstDisplayedProvider }
+            .Concat(Enum.GetValues<Provider>().Where(provider => provider != FirstDisplayedProvider))
             .Where(Settings.IsProviderDisplayed)
             .ToList();
 

@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -10,8 +11,8 @@ namespace PotatokenHub;
 public partial class PanelWindow : Window
 {
     // Includes 16pt transparent shadow space on every edge. Card itself stays
-    // exactly 220x96 or 320x210; only the transparent window bounds grow.
-    private static readonly Size SmallSize = new(252, 128);
+    // exactly 160x96 or 320x210; only the transparent window bounds grow.
+    private static readonly Size SmallSize = new(192, 128);
     private static readonly Size LargeSize = new(352, 242);
     /// <summary>How far below the large preset still renders the large layout.</summary>
     private const double LargeTolerance = 24;
@@ -75,7 +76,9 @@ public partial class PanelWindow : Window
             Render();
             if (e.PropertyName == nameof(UsageModel.DisplayedProviders))
             {
-                AnimateTo(SizeOf(_activePreset));
+                var target = SizeOf(_activePreset);
+                if (Math.Abs(Width - target.Width) >= 0.5 || Math.Abs(Height - target.Height) >= 0.5)
+                    AnimateTo(target);
             }
         });
 
@@ -97,7 +100,7 @@ public partial class PanelWindow : Window
         SourceInitialized += (_, _) => RestorePosition();
         SizeChanged += (_, _) => Render();
         MouseRightButtonUp += (_, e) => { e.Handled = true; RightClicked?.Invoke(); };
-        MouseLeftButtonDown += OnLeftButtonDown;
+        PreviewMouseLeftButtonDown += OnLeftButtonDown;
         Closing += (_, e) => { e.Cancel = true; HideAnimated(); };
 
         Render();
@@ -167,6 +170,11 @@ public partial class PanelWindow : Window
 
     private void OnLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        // Preview input makes the very first grab work even when another app
+        // owns focus. Keep buttons fully interactive: their click/double-click
+        // must never start a move or toggle the size preset.
+        if (IsFromButton(e.OriginalSource as DependencyObject)) return;
+
         var previousPosition = _positionAtLastMouseDown;
         _positionAtLastMouseDown = new Point(Left, Top);
 
@@ -184,6 +192,18 @@ public partial class PanelWindow : Window
         // resize grip handles its own hit-testing before this runs.
         try { DragMove(); }
         catch (InvalidOperationException) { }
+    }
+
+    private static bool IsFromButton(DependencyObject? source)
+    {
+        for (var current = source; current is not null;)
+        {
+            if (current is ButtonBase) return true;
+            current = current is Visual
+                ? VisualTreeHelper.GetParent(current)
+                : LogicalTreeHelper.GetParent(current);
+        }
+        return false;
     }
 
     public void ToggleSizePreset() =>
@@ -279,13 +299,20 @@ public partial class PanelWindow : Window
 
         var showClaude = _model.IsDisplayed(Provider.Claude);
         var showCodex = _model.IsDisplayed(Provider.Codex);
+        ApplyProviderOrder();
         LargeClaude.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         LargeCodex.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
         LargeProviderSeparator.Visibility = showClaude && showCodex ? Visibility.Visible : Visibility.Collapsed;
         LargeEmpty.Visibility = !showClaude && !showCodex ? Visibility.Visible : Visibility.Collapsed;
         SmallClaude.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         SmallCodex.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
-        SmallClaude.Margin = showClaude && showCodex ? new Thickness(0, 0, 0, 7) : new Thickness(0);
+        var bothVisible = showClaude && showCodex;
+        SmallClaude.Margin = bothVisible && _model.FirstDisplayedProvider == Provider.Claude
+            ? new Thickness(0, 0, 0, 7)
+            : new Thickness(0);
+        SmallCodex.Margin = bothVisible && _model.FirstDisplayedProvider == Provider.Codex
+            ? new Thickness(0, 0, 0, 7)
+            : new Thickness(0);
         SmallEmpty.Visibility = !showClaude && !showCodex ? Visibility.Visible : Visibility.Collapsed;
 
         if (isLarge)
@@ -308,6 +335,25 @@ public partial class PanelWindow : Window
             if (showClaude) BuildSmallRow(SmallClaude, _model.Claude);
             if (showCodex) BuildSmallRow(SmallCodex, _model.Codex);
         }
+    }
+
+    private void ApplyProviderOrder()
+    {
+        var claudeFirst = _model.FirstDisplayedProvider == Provider.Claude;
+        PutFirst(LargeView,
+            claudeFirst ? LargeClaude : LargeCodex,
+            LargeProviderSeparator,
+            claudeFirst ? LargeCodex : LargeClaude);
+        PutFirst(SmallView,
+            claudeFirst ? SmallClaude : SmallCodex,
+            claudeFirst ? SmallCodex : SmallClaude);
+    }
+
+    private static void PutFirst(Panel parent, params UIElement[] ordered)
+    {
+        foreach (var child in ordered) parent.Children.Remove(child);
+        for (var index = 0; index < ordered.Length; index++)
+            parent.Children.Insert(index, ordered[index]);
     }
 
     private static void BuildLargeSection(Panel host, ProviderSnapshot snapshot)

@@ -17,6 +17,8 @@ public static class CodexUsageReader
 
     private sealed class RateLimits
     {
+        [JsonPropertyName("limit_id")] public string? LimitId { get; set; }
+        [JsonPropertyName("limit_name")] public string? LimitName { get; set; }
         [JsonPropertyName("primary")] public RateLimitWindow? Primary { get; set; }
         [JsonPropertyName("secondary")] public RateLimitWindow? Secondary { get; set; }
     }
@@ -126,6 +128,7 @@ public static class CodexUsageReader
                     continue;
                 }
                 if (limits is null || (limits.Primary is null && limits.Secondary is null)) continue;
+                if (IsSparkLimit(limits)) continue;
 
                 var freshness = now - candidate.LastWriteTime > StaleAfter ? Freshness.Stale : Freshness.Fresh;
                 var windows = new List<UsageWindow>();
@@ -138,6 +141,10 @@ public static class CodexUsageReader
 
         return new ProviderSnapshot(Provider.Codex, Array.Empty<UsageWindow>(), true, files[0].LastWriteTime, Freshness.Stale);
     }
+
+    private static bool IsSparkLimit(RateLimits limits) =>
+        string.Equals(limits.LimitId, "codex_bengalfox", StringComparison.OrdinalIgnoreCase) ||
+        limits.LimitName?.Contains("Codex-Spark", StringComparison.OrdinalIgnoreCase) == true;
 
     /// <summary>
     /// Codex may append to the JSONL while a manual refresh is running. Open

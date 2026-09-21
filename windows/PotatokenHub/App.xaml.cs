@@ -60,7 +60,10 @@ public partial class App : Application
 
     private void UpdateTray()
     {
-        var snapshots = _model.DisplayedProviders
+        // Window order is user-configurable, but the tray's Cl/Cx order stays
+        // stable just like the macOS status item.
+        var snapshots = Enum.GetValues<Provider>()
+            .Where(_model.IsDisplayed)
             .Select(_model.SnapshotFor)
             .ToList();
         var segments = snapshots
@@ -93,6 +96,7 @@ public partial class App : Application
 
         menu.Items.Add(BuildSizeMenu());
         menu.Items.Add(BuildProviderVisibilityMenu());
+        menu.Items.Add(BuildProviderOrderMenu());
 
         var onTop = new ToolStripMenuItem(
             L.T(ko: "항상 위", en: "Always on Top", ja: "常に手前に表示", zh: "总在最前"),
@@ -204,6 +208,30 @@ public partial class App : Application
                 _model.ToggleDisplayed(capturedProvider);
             })
             { Checked = _model.IsDisplayed(provider) });
+        }
+
+        return parent;
+    }
+
+    private ToolStripMenuItem BuildProviderOrderMenu()
+    {
+        var parent = new ToolStripMenuItem(
+            L.T(ko: "표시 순서", en: "Display Order", ja: "表示順序", zh: "显示顺序"));
+
+        foreach (var provider in Enum.GetValues<Provider>())
+        {
+            var capturedProvider = provider;
+            parent.DropDownItems.Add(new ToolStripMenuItem(
+                L.T(
+                    ko: $"{provider.DisplayName()}를 위에 표시",
+                    en: $"{provider.DisplayName()} on Top",
+                    ja: $"{provider.DisplayName()}を上に表示",
+                    zh: $"{provider.DisplayName()}显示在上方"),
+                null,
+                (_, _) => _model.SetFirstDisplayedProvider(capturedProvider))
+            {
+                Checked = _model.FirstDisplayedProvider == provider,
+            });
         }
 
         return parent;
