@@ -1,12 +1,15 @@
-import SwiftUI
+import AppKit
 
 @main
-struct TokenGaugeApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+@MainActor
+enum TokenGaugeApp {
+    private static let appDelegate = AppDelegate()
 
-    var body: some Scene {
-        Settings {
-            EmptyView()
-        }
+    static func main() {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.accessory)
+        app.delegate = appDelegate
+        app.finishLaunching()
+        app.run()
     }
 }

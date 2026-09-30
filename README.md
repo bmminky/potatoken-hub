@@ -19,11 +19,11 @@ Mac에 이미 저장되어 있는 로컬 사용량 기록만 읽습니다. 계�
 
 ### 다운로드
 
-[Download macOS (Apple Silicon)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/potatoken-hub-1.21.0-macOS-arm64.zip) · [Download Windows (x64, v1.21.1)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/potatoken-hub-1.21.1-windows-x64.zip)
+[Download macOS (Apple Silicon)](https://github.com/bmminky/potatoken-hub/releases/download/v1.22.0/potatoken-hub-1.22.0-macOS-arm64.zip) · [Download Windows (x64, v1.21.1)](https://github.com/bmminky/potatoken-hub/releases/download/v1.22.0/potatoken-hub-1.21.1-windows-x64.zip)
 
-macOS 1.21.0: 게이지·글자 영역 드래그 개선, 소형창 폭 160pt, 우클릭 → 표시 순서에서 Claude/Codex 상하 순서 선택 및 저장. Windows 1.21.1에도 드래그 개선, 소형 카드 폭 160 DIP, 표시 순서 저장을 적용하고 Codex Spark 한도 표시를 제외했습니다.
+macOS 1.22.0: 최신 사용량 기록의 시각을 기준으로 값을 고르고, 별도 Codex Spark 한도는 제외합니다. 15분 넘게 갱신되지 않은 값은 `—`로 표시합니다. 메뉴바의 Codex는 Plus 요금제에서 5시간, Pro 요금제에서 주간(`W`) 잔여량을 표시합니다. 첫 실행 시 빈 Settings 창이 뜨던 문제도 해결했습니다. Windows는 기존 1.21.1 빌드이며 이 macOS 수정은 포함하지 않습니다.
 
-1. DMG를 열고 `potatoken hub.app`을 Applications 폴더로 드래그하거나, ZIP을 풀어서 옮깁니다.
+1. ZIP을 풀고 `potatoken hub.app`을 Applications 폴더로 옮깁니다.
 2. 처음 실행할 때 Finder에서 `potatoken hub.app`을 **우클릭 → 열기**로 실행하세요.
 3. 그래도 막히면 시스템 설정 → 개인정보 보호 및 보안에서, 이 저장소에서 받은 파일이 맞는지 확인한 뒤 "확인 없이 열기"를 선택하세요.
 4. 메뉴바에서 potatoken hub 게이지를 찾으세요 — Dock 아이콘은 의도적으로 없습니다.
@@ -32,10 +32,10 @@ macOS 1.21.0: 게이지·글자 영역 드래그 개선, 소형창 폭 160pt, �
 
 **무결성 확인 (SHA-256)**
 
-macOS는 v1.21.0, Windows는 v1.21.1 배포 파일의 값입니다. [체크섬 파일](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/SHA256SUMS-1.21.1.txt)도 함께 제공합니다.
+macOS는 v1.22.0, Windows는 변경 없는 v1.21.1 배포 파일의 값입니다. [체크섬 파일](https://github.com/bmminky/potatoken-hub/releases/download/v1.22.0/SHA256SUMS-1.22.0.txt)도 함께 제공합니다.
 
 ```
-501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
+b6a8cf4821f0688f51a44cb6325e13a0c55c936f4857933e474eae3616053f12  potatoken-hub-1.22.0-macOS-arm64.zip
 f522ed1c627fd79daae3a193e2a1cebee145bb6dbbcadeeff4414f47df59c1d7  potatoken-hub-1.21.1-windows-x64.zip
 ```
 
@@ -43,11 +43,11 @@ macOS: `shasum -a 256 파일명` / Windows: `certutil -hashfile 파일명 SHA256
 
 ### 기능
 
-- **메뉴바 표시** — 각 제공자의 5시간 남은 비율을 `Cl 74%  Cx 55%` 형태로 표시
+- **메뉴바 표시** — Claude는 5시간, Codex는 Plus에서 5시간·Pro에서 주간 잔여량을 표시합니다. `W`는 주간 수치입니다.
 - **두 가지 창 크기** — 창을 더블클릭하거나 우클릭 메뉴의 `창 크기`에서 전환
   - 소형: Claude/Codex 각각 한 줄 요약 + 사용량 막대
   - 대형: 창(5시간/주간/7일)별 상세 게이지, 리셋 예상 시각, 새로고침·숨기기
-- **15초마다 자동 새로고침**
+- **15초마다 자동 새로고침** — 원본 기록이 15분 넘게 갱신되지 않으면 오래된 값을 `—`로 표시
 - **우클릭 메뉴** — 창 크기, 항상 위, 로그인 시 자동 실행 토글, 앱 종료
 - **서비스별 표시 설정** — 우클릭 메뉴에서 Claude와 Codex 표시 여부를 각각 선택
 - **위치·크기 기억** — 창을 닫은 자리에 그대로 다시 열림
@@ -59,7 +59,7 @@ macOS: `shasum -a 256 파일명` / Windows: `certutil -hashfile 파일명 SHA256
 | 제공자 | 로컬 경로 | 비고 |
 |---|---|---|
 | Claude | `~/Library/Application Support/Claude/plan-usage-history.json` | 5시간·주간 사용률. 파일에 리셋 시각이 없어 과거 사용량이 급감한 지점으로 추정하며, 추정값은 `약`으로 표시 |
-| Codex | `~/.codex/sessions/**/*.jsonl` | 가장 최근 `rate_limits` 기록. `resets_at`이 있어 리셋 시각이 정확함 |
+| Codex | `~/.codex/sessions/**/*.jsonl` | 파일 수정 시각이 아닌 가장 최근 `rate_limits` 기록의 시각을 사용. 기록의 요금제 정보로 메뉴바 창을 선택하며 인증 토큰은 읽지 않음 |
 
 두 파일 모두 읽기 전용으로 열며, 대화 내용은 읽지 않습니다.
 
@@ -116,11 +116,11 @@ no analytics, no provider API keys, no network calls.
 
 ### Download
 
-[Download macOS (Apple Silicon)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/potatoken-hub-1.21.0-macOS-arm64.zip) · [Download Windows (x64, v1.21.1)](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/potatoken-hub-1.21.1-windows-x64.zip)
+[Download macOS (Apple Silicon)](https://github.com/bmminky/potatoken-hub/releases/download/v1.22.0/potatoken-hub-1.22.0-macOS-arm64.zip) · [Download Windows (x64, v1.21.1)](https://github.com/bmminky/potatoken-hub/releases/download/v1.22.0/potatoken-hub-1.21.1-windows-x64.zip)
 
-macOS 1.21.0 adds dragging from gauges and text, a 160pt compact panel, and a saved Claude/Codex order under right-click → Display Order. Windows 1.21.1 brings the drag, compact width and saved display-order changes to Windows and excludes Codex Spark quotas.
+macOS 1.22.0 chooses the newest usage record by its timestamp, excludes the separate Codex Spark allowance, and shows `—` for data older than 15 minutes. In the menu bar, Codex shows the 5-hour allowance on Plus and the weekly allowance (`W`) on Pro. Launch no longer opens an empty Settings window. Windows remains the unchanged 1.21.1 build and does not include these macOS changes.
 
-1. Open the DMG and drag `potatoken hub.app` into Applications, or unzip and move it there.
+1. Unzip the archive and move `potatoken hub.app` to Applications.
 2. On first launch, **right-click `potatoken hub.app` in Finder and choose Open**.
 3. If macOS still blocks it, go to System Settings → Privacy & Security and choose "Open Anyway" only after confirming you got it from this repository.
 4. Look for the potatoken hub gauge in the menu bar — there's no Dock icon by design.
@@ -129,10 +129,10 @@ Signing notice: this build is ad-hoc signed and not notarized by Apple (a person
 
 **Integrity check (SHA-256)**
 
-Values for macOS v1.21.0 and Windows v1.21.1. The [checksum file](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/SHA256SUMS-1.21.1.txt) is included with the release.
+Values for macOS v1.22.0 and the unchanged Windows v1.21.1 build. The [checksum file](https://github.com/bmminky/potatoken-hub/releases/download/v1.22.0/SHA256SUMS-1.22.0.txt) is included with the release.
 
 ```
-501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
+b6a8cf4821f0688f51a44cb6325e13a0c55c936f4857933e474eae3616053f12  potatoken-hub-1.22.0-macOS-arm64.zip
 f522ed1c627fd79daae3a193e2a1cebee145bb6dbbcadeeff4414f47df59c1d7  potatoken-hub-1.21.1-windows-x64.zip
 ```
 
@@ -140,11 +140,11 @@ macOS: `shasum -a 256 <file>` / Windows: `certutil -hashfile <file> SHA256`
 
 ### Features
 
-- **Menu bar readout** — each provider's 5-hour remaining percentage, shown as `Cl 74%  Cx 55%`
+- **Menu bar readout** — Claude shows 5-hour remaining; Codex shows 5-hour on Plus or weekly on Pro (`W` marks weekly).
 - **Two panel sizes** — switch by double-clicking the window, or from `Window Size` in the right-click menu
   - Small: a one-line summary and usage bar per provider
   - Large: a detailed gauge per window (5h/weekly/7d), estimated reset time, refresh/hide
-- **Auto-refresh every 15 seconds**
+- **Auto-refresh every 15 seconds** — shows `—` when the source record is more than 15 minutes old
 - **Right-click menu** — window size, always on top, toggle launch at login, quit
 - **Per-provider visibility** — show or hide Claude and Codex independently from the right-click menu
 - **Remembers position and size** — reopens exactly where you left it
@@ -156,7 +156,7 @@ macOS: `shasum -a 256 <file>` / Windows: `certutil -hashfile <file> SHA256`
 | Provider | Local path | Notes |
 |---|---|---|
 | Claude | `~/Library/Application Support/Claude/plan-usage-history.json` | 5-hour and weekly usage. The file has no reset timestamp, so it's estimated from where past usage dropped sharply — estimated values are marked "(est.)" |
-| Codex | `~/.codex/sessions/**/*.jsonl` | The most recent `rate_limits` record. `resets_at` is present, so the reset time is exact |
+| Codex | `~/.codex/sessions/**/*.jsonl` | Chooses the newest `rate_limits` event by record time, not file mtime. Uses its plan field for the menu bar; never reads auth tokens |
 
 Both files are opened read-only; conversation content is never read.
 
@@ -210,11 +210,11 @@ Mac にすでに保存されているローカルの使用量記録だけを読�
 
 ### ダウンロード
 
-[最新リリース](https://github.com/bmminky/potatoken-hub/releases/latest)から Apple Silicon 用 macOS ZIP を入手してください。Windows 1.21.1 にもドラッグ改善、幅160 DIP、表示順序の保存を適用し、Codex Spark の使用量を除外しました。
+[最新リリース](https://github.com/bmminky/potatoken-hub/releases/latest)から Apple Silicon 用 macOS ZIP を入手してください。Windows は変更のない 1.21.1 ビルドです。
 
-macOS 1.21.0: ゲージと文字からのドラッグ、小型ウィンドウの幅160pt、右クリック → 表示順序で Claude/Codex の上下順序を選択・保存できます。
+macOS 1.22.0: 使用量レコードの時刻で最新値を選び、別枠の Codex Spark 制限は除外します。15分以上更新されていない値は `—` と表示します。メニューバーの Codex は Plus では5時間、Pro では週間（`W`）の残量を表示します。起動時に空の Settings ウィンドウが開く問題も修正しました。
 
-1. DMG を開いて `potatoken hub.app` を Applications フォルダにドラッグするか、ZIP を展開して移動します。
+1. ZIP を展開し、`potatoken hub.app` を Applications フォルダに移動します。
 2. 初回起動時は Finder で `potatoken hub.app` を**右クリック → 開く**で起動してください。
 3. それでもブロックされる場合は、システム設定 → プライバシーとセキュリティで、このリポジトリから入手したことを確認したうえで「このまま開く」を選択してください。
 4. メニューバーで potatoken hub のゲージを探してください — Dock アイコンは意図的にありません。
@@ -223,10 +223,10 @@ macOS 1.21.0: ゲージと文字からのドラッグ、小型ウィンドウの
 
 **整合性確認(SHA-256)**
 
-macOS は v1.21.0、Windows は v1.21.1 の値です。[チェックサムファイル](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/SHA256SUMS-1.21.1.txt)もリリースに含まれます。
+macOS v1.22.0 と変更のない Windows v1.21.1 の値です。[チェックサムファイル](https://github.com/bmminky/potatoken-hub/releases/download/v1.22.0/SHA256SUMS-1.22.0.txt)もリリースに含まれます。
 
 ```
-501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
+b6a8cf4821f0688f51a44cb6325e13a0c55c936f4857933e474eae3616053f12  potatoken-hub-1.22.0-macOS-arm64.zip
 f522ed1c627fd79daae3a193e2a1cebee145bb6dbbcadeeff4414f47df59c1d7  potatoken-hub-1.21.1-windows-x64.zip
 ```
 
@@ -234,11 +234,11 @@ macOS: `shasum -a 256 ファイル名` / Windows: `certutil -hashfile ファイ�
 
 ### 機能
 
-- **メニューバー表示** — 各プロバイダーの5時間枠の残り割合を `Cl 74%  Cx 55%` の形式で表示
+- **メニューバー表示** — Claude は5時間、Codex は Plus で5時間・Pro で週間の残量を表示します。`W` は週間を示します。
 - **2種類のウィンドウサイズ** — ウィンドウをダブルクリックするか、右クリックメニューの「ウインドウサイズ」で切り替え
   - 小: Claude/Codex それぞれ1行の要約と使用量バー
   - 大: ウィンドウ(5時間/週間/7日)ごとの詳細ゲージ、リセット予想時刻、更新・非表示
-- **15秒ごとに自動更新**
+- **15秒ごとに自動更新** — 元のレコードが15分以上更新されていない場合は `—` と表示
 - **右クリックメニュー** — ウインドウサイズ、常に手前に表示、ログイン時の自動起動の切り替え、アプリ終了
 - **プロバイダー別の表示設定** — 右クリックメニューで Claude と Codex の表示・非表示を個別に選択
 - **位置・サイズを記憶** — 閉じた場所にそのまま再度開く
@@ -250,7 +250,7 @@ macOS: `shasum -a 256 ファイル名` / Windows: `certutil -hashfile ファイ�
 | プロバイダー | ローカルパス | 備考 |
 |---|---|---|
 | Claude | `~/Library/Application Support/Claude/plan-usage-history.json` | 5時間・週間の使用率。ファイルにリセット時刻がないため、過去の使用量が急減した地点から推定し、推定値には「約」を表示 |
-| Codex | `~/.codex/sessions/**/*.jsonl` | 直近の `rate_limits` 記録。`resets_at` があるためリセット時刻は正確 |
+| Codex | `~/.codex/sessions/**/*.jsonl` | ファイル更新時刻ではなく最新レコードの時刻で選択。記録内のプラン情報でメニューバーの枠を選び、認証トークンは読み取りません |
 
 両ファイルとも読み取り専用で開き、会話内容は読み取りません。
 
@@ -306,11 +306,11 @@ OpenAI、Anthropic とは無関係の個人プロジェクトです。
 
 ### 下载
 
-从[最新版本](https://github.com/bmminky/potatoken-hub/releases/latest)下载适用于 Apple Silicon 的 macOS ZIP。Windows 1.21.1 同步了拖动、160 DIP 窗口宽度和显示顺序设置，并排除 Codex Spark 配额。
+从[最新版本](https://github.com/bmminky/potatoken-hub/releases/latest)下载适用于 Apple Silicon 的 macOS ZIP。Windows 仍是未更改的 1.21.1 版本。
 
-macOS 1.21.0：支持从进度条和文字区域拖动，小窗口宽度为160pt，可通过右键 → 显示顺序选择并保存 Claude/Codex 的上下顺序。
+macOS 1.22.0：按使用量记录的时间选择最新值，并排除单独的 Codex Spark 限额；超过15分钟未更新的数值显示为 `—`。菜单栏中的 Codex 在 Plus 套餐下显示5小时余量，在 Pro 套餐下显示每周余量（`W`）。同时修复启动时出现空白 Settings 窗口的问题。
 
-1. 打开 DMG,将 `potatoken hub.app` 拖入 Applications 文件夹;或解压 ZIP 后手动移动过去。
+1. 解压 ZIP，将 `potatoken hub.app` 移动到 Applications 文件夹。
 2. 首次启动时,在 Finder 中**右键点击 `potatoken hub.app` → 打开**。
 3. 如果 macOS 仍然阻止运行,请前往系统设置 → 隐私与安全性,在确认文件确实来自本仓库后选择"仍要打开"。
 4. 在菜单栏中寻找 potatoken hub 的进度图标 —— 该应用刻意不提供 Dock 图标。
@@ -319,10 +319,10 @@ macOS 1.21.0：支持从进度条和文字区域拖动，小窗口宽度为160pt
 
 **完整性校验(SHA-256)**
 
-以下为 macOS v1.21.0 与 Windows v1.21.1 的值。[校验和文件](https://github.com/bmminky/potatoken-hub/releases/download/v1.21.1/SHA256SUMS-1.21.1.txt)也包含在发行版中。
+以下为 macOS v1.22.0 与未更改的 Windows v1.21.1 的值。[校验和文件](https://github.com/bmminky/potatoken-hub/releases/download/v1.22.0/SHA256SUMS-1.22.0.txt)也包含在发行版中。
 
 ```
-501a7684977258e893c410e616a1c2d97f0cc801db56466f7c28cfbcc1af193e  potatoken-hub-1.21.0-macOS-arm64.zip
+b6a8cf4821f0688f51a44cb6325e13a0c55c936f4857933e474eae3616053f12  potatoken-hub-1.22.0-macOS-arm64.zip
 f522ed1c627fd79daae3a193e2a1cebee145bb6dbbcadeeff4414f47df59c1d7  potatoken-hub-1.21.1-windows-x64.zip
 ```
 
@@ -330,11 +330,11 @@ macOS: `shasum -a 256 文件名` / Windows: `certutil -hashfile 文件名 SHA256
 
 ### 功能
 
-- **菜单栏显示** — 以 `Cl 74%  Cx 55%` 的形式显示各服务商5小时额度的剩余比例
+- **菜单栏显示** — Claude 显示5小时余量；Codex 在 Plus 下显示5小时、在 Pro 下显示每周余量（`W` 表示每周）。
 - **两种窗口尺寸** — 双击窗口,或在右键菜单的「窗口大小」中切换
   - 小尺寸:Claude/Codex 各一行摘要 + 使用量条
   - 大尺寸:每个窗口(5小时/每周/7天)的详细进度条、预计重置时间、刷新/隐藏
-- **每15秒自动刷新**
+- **每15秒自动刷新** — 原始记录超过15分钟未更新时显示 `—`
 - **右键菜单** — 窗口大小、总在最前、切换开机自启动、退出应用
 - **按服务商控制显示** — 可在右键菜单中分别显示或隐藏 Claude 与 Codex
 - **记住位置和大小** — 关闭后下次在原位置重新打开
@@ -346,7 +346,7 @@ macOS: `shasum -a 256 文件名` / Windows: `certutil -hashfile 文件名 SHA256
 | 服务商 | 本地路径 | 备注 |
 |---|---|---|
 | Claude | `~/Library/Application Support/Claude/plan-usage-history.json` | 5小时·每周使用率。文件中没有重置时间戳,因此根据历史使用量骤降的位置进行估算,估算值会标注"大约" |
-| Codex | `~/.codex/sessions/**/*.jsonl` | 最近一次的 `rate_limits` 记录。因为存在 `resets_at`,重置时间是精确的 |
+| Codex | `~/.codex/sessions/**/*.jsonl` | 按记录时间而非文件修改时间选择最新值；使用记录中的套餐信息选择菜单栏窗口，不读取认证令牌 |
 
 两个文件都以只读方式打开,不会读取对话内容。
 

@@ -214,16 +214,25 @@ private struct FooterView: View {
         return formatter
     }()
 
+    private static let olderRecordFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "MM/dd HH:mm"
+        return formatter
+    }()
+
     var body: some View {
         HStack(spacing: 10) {
             HStack(spacing: 0) {
                 if let lastUpdated = model.lastUpdated {
-                    let time = Self.updateTimeFormatter.string(from: lastUpdated)
+                    let formatter = Calendar.current.isDateInToday(lastUpdated)
+                        ? Self.updateTimeFormatter : Self.olderRecordFormatter
+                    let time = formatter.string(from: lastUpdated)
                     Text(L.t(
-                        ko: "업데이트 \(time)",
-                        en: "Updated \(time)",
-                        ja: "更新 \(time)",
-                        zh: "更新于 \(time)"
+                        ko: "기록 \(time)",
+                        en: "Recorded \(time)",
+                        ja: "記録 \(time)",
+                        zh: "记录于 \(time)"
                     ))
                     .font(.caption2)
                     .foregroundStyle(.secondary)

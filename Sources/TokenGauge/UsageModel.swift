@@ -12,8 +12,6 @@ final class UsageModel: ObservableObject {
         [.init(label: "PH", value: "—", provider: nil, remaining: nil)]
 
     private var timer: Timer?
-    private var lastClaudeMTime: Date?
-    private var lastCodexMTime: Date?
     private var providerVisibility: [Provider: Bool]
     private static let firstProviderKey = "TokenGauge.firstDisplayedProvider"
     private(set) var firstDisplayedProvider: Provider = UserDefaults.standard
@@ -31,20 +29,10 @@ final class UsageModel: ObservableObject {
     }
 
     func refresh() {
-        let newClaude = ClaudeUsageReader.readSnapshot()
-        let newCodex = CodexUsageReader.readSnapshot()
-
-        if newClaude.lastFileChange != lastClaudeMTime {
-            lastClaudeMTime = newClaude.lastFileChange
-        }
-        if newCodex.lastFileChange != lastCodexMTime {
-            lastCodexMTime = newCodex.lastFileChange
-        }
-
-        claude = newClaude
-        codex = newCodex
-        lastUpdated = Date()
+        claude = ClaudeUsageReader.readSnapshot().hidingStaleUsage
+        codex = CodexUsageReader.readSnapshot().hidingStaleUsage
         updateDisplayedProviders()
+        lastUpdated = displayedSnapshots.compactMap(\.lastRecordDate).max()
         menuBarSegments = computeMenuBarSegments()
     }
 
@@ -63,6 +51,7 @@ final class UsageModel: ObservableObject {
         providerVisibility[provider] = next
         ProviderDisplayPreference.save(next, for: provider)
         updateDisplayedProviders()
+        lastUpdated = displayedSnapshots.compactMap(\.lastRecordDate).max()
         menuBarSegments = computeMenuBarSegments()
     }
 
@@ -83,7 +72,7 @@ final class UsageModel: ObservableObject {
     private func computeMenuBarSegments() -> [StatusItemBadge.Segment] {
         var parts: [StatusItemBadge.Segment] = []
         if displayedProviders.contains(.claude) {
-            let remaining = shortestWindowRemaining(claude)
+            let remaining = claude.fiveHourRemainingPercent
             parts.append(.init(
                 label: "Cl",
                 value: remaining.map { "\(Int($0))%" } ?? "—",
@@ -92,10 +81,12 @@ final class UsageModel: ObservableObject {
             ))
         }
         if displayedProviders.contains(.codex) {
-            let remaining = shortestWindowRemaining(codex)
+            let window = codex.menuBarWindow
+            let remaining = window?.remainingPercent
+            let prefix = window?.windowMinutes == 10080 ? "W" : ""
             parts.append(.init(
                 label: "Cx",
-                value: remaining.map { "\(Int($0))%" } ?? "—",
+                value: remaining.map { "\(prefix)\(Int($0))%" } ?? "—",
                 provider: .codex,
                 remaining: remaining
             ))
@@ -103,15 +94,6 @@ final class UsageModel: ObservableObject {
         return parts
     }
 
-    /// Each menu-bar number represents the provider's shortest reported
-    /// allowance window (normally 5 hours), even when weekly is tighter.
-    private func shortestWindowRemaining(_ snapshot: ProviderSnapshot) -> Double? {
-        guard snapshot.sourceExists else { return nil }
-        return snapshot.windows
-            .filter { $0.remainingPercent != nil }
-            .min { $0.windowMinutes < $1.windowMinutes }?
-            .remainingPercent
-    }
 }
 
 enum ProviderDisplayPreference {

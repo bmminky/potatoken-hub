@@ -34,7 +34,9 @@ public enum ClaudeUsageReader {
             return ProviderSnapshot(provider: .claude, windows: [], sourceExists: exists, lastFileChange: nil, freshness: .stale)
         }
 
-        let freshness: FreshnessState = now.timeIntervalSince(mtime) > staleAfter ? .stale : .fresh
+        let recordDate = Date(timeIntervalSince1970: Double(latest.t) / 1000)
+        let recordAge = now.timeIntervalSince(recordDate)
+        let freshness: FreshnessState = recordAge >= 0 && recordAge <= staleAfter ? .fresh : .stale
         let sorted = file.samples.sorted { $0.t < $1.t }
 
         func series(_ key: String) -> [UsageSample] {
@@ -66,6 +68,6 @@ public enum ClaudeUsageReader {
             ),
         ]
 
-        return ProviderSnapshot(provider: .claude, windows: windows, sourceExists: true, lastFileChange: mtime, freshness: freshness)
+        return ProviderSnapshot(provider: .claude, windows: windows, sourceExists: true, lastFileChange: mtime, lastRecordDate: recordDate, freshness: freshness)
     }
 }

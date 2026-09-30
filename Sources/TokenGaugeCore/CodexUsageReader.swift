@@ -7,6 +7,9 @@ struct CodexRateLimitWindow: Decodable {
 }
 
 struct CodexRateLimits: Decodable {
+    let limit_id: String?
+    let limit_name: String?
+    let plan_type: String?
     let primary: CodexRateLimitWindow?
     let secondary: CodexRateLimitWindow?
 }
@@ -17,6 +20,7 @@ struct CodexPayload: Decodable {
 }
 
 struct CodexLine: Decodable {
+    let timestamp: String?
     let payload: CodexPayload?
 }
 
@@ -30,7 +34,7 @@ public enum CodexUsageReader {
     public static func readSnapshot(
         sessionsDir: URL = defaultSessionsDir(),
         now: Date = Date(),
-        candidateFileCount: Int = 8
+        candidateFileCount: Int = .max
     ) -> ProviderSnapshot {
         let fm = FileManager.default
         var isDir: ObjCBool = false
@@ -52,30 +56,109 @@ public enum CodexUsageReader {
         }
         files.sort { $0.mtime > $1.mtime }
 
-        for candidate in files.prefix(candidateFileCount) {
-            guard let content = try? String(contentsOf: candidate.url, encoding: .utf8) else { continue }
-            let lines = content.split(separator: "\n", omittingEmptySubsequences: true)
-            for rawLine in lines.reversed() {
-                guard rawLine.contains("rate_limits"),
-                      let data = rawLine.data(using: .utf8),
-                      let decoded = try? JSONDecoder().decode(CodexLine.self, from: data),
-                      let rl = decoded.payload?.rate_limits,
-                      rl.primary != nil || rl.secondary != nil
-                else { continue }
+        let fractionalFormatter = ISO8601DateFormatter()
+        fractionalFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let wholeSecondFormatter = ISO8601DateFormatter()
+        wholeSecondFormatter.formatOptions = [.withInternetDateTime]
+        let decoder = JSONDecoder()
+        var latest: (date: Date, file: (url: URL, mtime: Date), limits: CodexRateLimits)?
 
-                let freshness: FreshnessState = now.timeIntervalSince(candidate.mtime) > staleAfter ? .stale : .fresh
-                var windows: [UsageWindow] = []
-                if let p = rl.primary {
-                    windows.append(makeWindow(label: labelFor(minutes: p.window_minutes), window: p))
-                }
-                if let s = rl.secondary {
-                    windows.append(makeWindow(label: labelFor(minutes: s.window_minutes), window: s))
-                }
-                return ProviderSnapshot(provider: .codex, windows: windows, sourceExists: true, lastFileChange: candidate.mtime, freshness: freshness)
+        for candidate in files.prefix(max(0, candidateFileCount)) {
+            // A record cannot be newer than the file containing it. Once the
+            // remaining files predate our best record, they cannot beat it.
+            if let latest, candidate.mtime < latest.date { break }
+            guard let record = newestRateLimits(
+                in: candidate.url,
+                noLaterThan: now.addingTimeInterval(60),
+                decoder: decoder,
+                fractionalFormatter: fractionalFormatter,
+                wholeSecondFormatter: wholeSecondFormatter
+            ) else { continue }
+            if latest == nil || record.date > latest!.date {
+                latest = (record.date, candidate, record.limits)
             }
         }
 
+        if let latest {
+            let freshness: FreshnessState = now.timeIntervalSince(latest.date) <= staleAfter ? .fresh : .stale
+            var windows: [UsageWindow] = []
+            if let p = latest.limits.primary {
+                windows.append(makeWindow(label: labelFor(minutes: p.window_minutes), window: p))
+            }
+            if let s = latest.limits.secondary {
+                windows.append(makeWindow(label: labelFor(minutes: s.window_minutes), window: s))
+            }
+            return ProviderSnapshot(
+                provider: .codex,
+                windows: windows,
+                sourceExists: true,
+                lastFileChange: latest.file.mtime,
+                lastRecordDate: latest.date,
+                freshness: freshness,
+                codexPlan: plan(from: latest.limits.plan_type)
+            )
+        }
+
         return ProviderSnapshot(provider: .codex, windows: [], sourceExists: true, lastFileChange: files.first?.mtime, freshness: .stale)
+    }
+
+    private static func plan(from rawValue: String?) -> CodexPlan? {
+        guard let value = rawValue?.lowercased() else { return nil }
+        if value == "plus" { return .plus }
+        // Codex currently reports the Pro 5x tier as "prolite".
+        if value == "pro" || value == "prolite" { return .pro }
+        return nil
+    }
+
+    /// Rollout JSONL is append-ordered. Read backward in chunks so even a
+    /// large conversation file costs only its tail, not its entire history.
+    private static func newestRateLimits(
+        in url: URL,
+        noLaterThan latestAllowed: Date,
+        decoder: JSONDecoder,
+        fractionalFormatter: ISO8601DateFormatter,
+        wholeSecondFormatter: ISO8601DateFormatter
+    ) -> (date: Date, limits: CodexRateLimits)? {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? handle.close() }
+        guard var offset = try? handle.seekToEnd() else { return nil }
+        var unfinishedLine = Data()
+        let marker = Data("\"rate_limits\"".utf8)
+
+        func decode(_ line: Data) -> (date: Date, limits: CodexRateLimits)? {
+            guard line.range(of: marker) != nil,
+                  let decoded = try? decoder.decode(CodexLine.self, from: line),
+                  let timestamp = decoded.timestamp,
+                  let date = fractionalFormatter.date(from: timestamp) ?? wholeSecondFormatter.date(from: timestamp),
+                  date <= latestAllowed,
+                  let limits = decoded.payload?.rate_limits,
+                  limits.limit_id == nil || limits.limit_id?.lowercased() == "codex",
+                  !(limits.limit_name?.localizedCaseInsensitiveContains("Codex-Spark") ?? false),
+                  limits.primary != nil || limits.secondary != nil
+            else { return nil }
+            return (date, limits)
+        }
+
+        while offset > 0 {
+            let count = Int(min(offset, 64 * 1024))
+            offset -= UInt64(count)
+            do {
+                try handle.seek(toOffset: offset)
+                guard let chunk = try handle.read(upToCount: count) else { return nil }
+                var combined = chunk
+                combined.append(unfinishedLine)
+                var end = combined.endIndex
+                while let newline = combined[..<end].lastIndex(of: 0x0A) {
+                    let line = Data(combined[combined.index(after: newline)..<end])
+                    if let record = decode(line) { return record }
+                    end = newline
+                }
+                unfinishedLine = Data(combined[..<end])
+            } catch {
+                return nil
+            }
+        }
+        return decode(unfinishedLine)
     }
 
     private static func makeWindow(label: String, window: CodexRateLimitWindow) -> UsageWindow {
